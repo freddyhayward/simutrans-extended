@@ -1017,6 +1017,7 @@ public:
 	inline uint32 get_sum_power() {return get_continuous_power();}
 	inline sint32 get_min_top_speed() {return get_vehicle_summary().max_sim_speed;}
 	inline sint32 get_max_power_speed() OVERRIDE {return get_min_top_speed();}
+	inline sint32 get_current_speed() OVERRIDE {return get_akt_speed();}
 
 	/// @returns weight of the convoy's vehicles (excluding freight)
 	inline sint64 get_sum_weight() {return get_vehicle_summary().weight;}
@@ -1036,7 +1037,7 @@ public:
 	 * @return length of convoi in the correct units for movement
 	 * @author neroden
 	 */
-	uint32 get_length_in_steps() const { return get_length() * VEHICLE_STEPS_PER_CARUNIT; }
+	uint32 get_length_in_steps() OVERRIDE { return get_length() * VEHICLE_STEPS_PER_CARUNIT; }
 
 	/**
 	 * Add the costs for travelling one tile

@@ -71,6 +71,8 @@ public:
 	virtual bool can_overtake(overtaker_t *other_overtaker, sint32 other_speed, sint16 steps_other) = 0;
 
 	virtual sint32 get_max_power_speed() = 0;
+	virtual sint32 get_current_speed() = 0;
+	virtual uint32 get_length_in_steps() = 0;
 
 	sint8 get_tiles_overtaking() const { return tiles_overtaking; }
 

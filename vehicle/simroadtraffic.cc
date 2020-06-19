@@ -464,7 +464,7 @@ private_car_t::private_car_t(grund_t* gr, koord const target) :
 
 sync_result private_car_t::sync_step(uint32 delta_t)
 {
-	time_to_life -= delta_t;
+	//time_to_life -= delta_t;
 	if(  time_to_life<=0 ) {
 		return SYNC_DELETE;
 	}
@@ -656,12 +656,12 @@ bool private_car_t::can_enter_tile(grund_t *gr)
 	if(  get_pos()==pos_next_next  ) {
 		// turning around => single check
 		const uint8 next_direction = ribi_t::backward(this_direction);
-		dt = no_cars_blocking( gr, NULL, next_direction, next_direction, next_direction, this, 0 );
+		dt = get_car_blocking( gr, NULL, next_direction, next_direction, next_direction, this, 0 );
 
 		// do not block railroad crossing
 		if(dt==NULL  &&  str->is_crossing()) {
 			const grund_t *gr = welt->lookup(get_pos());
-			dt = no_cars_blocking( gr, NULL, next_direction, next_direction, next_direction, this, 0 );
+			dt = get_car_blocking( gr, NULL, next_direction, next_direction, next_direction, this, 0 );
 		}
 	}
 	else {
@@ -701,7 +701,7 @@ bool private_car_t::can_enter_tile(grund_t *gr)
 			grund_t *test = welt->lookup(pos_next_next);
 			if(  test  ) {
 				next_90direction = this->calc_direction(pos_next, pos_next_next);
-				dt = no_cars_blocking( gr, NULL, this_direction, next_direction, next_90direction, this, next_lane);
+				dt = get_car_blocking( gr, NULL, this_direction, next_direction, next_90direction, this, next_lane);
 				if(  !dt  ) {
 					// This possibly made traffic too cautious at junctions, causing delays. However, precisely what this did
 					// and why it did it remain unclear, so retaining for reference.
@@ -712,7 +712,7 @@ bool private_car_t::can_enter_tile(grund_t *gr)
 		}
 		else {
 			// not a crossing => skip 90° check!
-			dt = no_cars_blocking( gr, NULL, this_direction, next_direction, next_90direction, this, next_lane );
+			dt = get_car_blocking( gr, NULL, this_direction, next_direction, next_90direction, this, next_lane );
 			frei = true;
 		}
 		//If this car is overtaking, the car must avoid a head-on crash.
@@ -722,18 +722,13 @@ bool private_car_t::can_enter_tile(grund_t *gr)
 			sg[1] = welt->lookup(pos_next_next);
 			for(uint8 i = 0; i < 2; i++) {
 				for(  uint8 pos=1;  sg[i] && pos < sg[i]->get_top();  pos++  ) {
-					if(  vehicle_base_t* const v = obj_cast<vehicle_base_t>(sg[i]->obj_bei(pos))  ) {
+					if(  vehicle_base_t* const vb = obj_cast<vehicle_base_t>(sg[i]->obj_bei(pos))  ) {
 						ribi_t:: ribi other_direction = 255;
-						if(  road_vehicle_t const* const at = obj_cast<road_vehicle_t>(v)  ) {
-							if(  at && !at->get_convoi()->is_overtaking()  ) {
-								other_direction = at->get_direction();
-							}
+						overtaker_t* ov = vb->get_overtaker();
+						if(  ov && ov->is_overtaking() ){
+							other_direction = vb->get_direction();
 						}
-						else if(  private_car_t* const caut = obj_cast<private_car_t>(v)  ) {
-							if(  !caut->is_overtaking()  ) {
-								other_direction = caut->get_direction();
-							}
-						}
+
 						if(  other_direction!=255  ) {
 							if(  i==0  &&  ribi_t::reverse_single(get_90direction())==other_direction  ) {
 								set_tiles_overtaking(0);
@@ -746,84 +741,45 @@ bool private_car_t::can_enter_tile(grund_t *gr)
 				}
 			}
 		}
+
+		overtaker_t *over = NULL;
+		if(dt) {
+			over = dt->get_overtaker();
+		}
 		// Overtaking vehicles shouldn't have anything blocking them
-		if(  overtaking_mode <= oneway_mode  ) {
-			if(  dt  ) {
-				overtaker_t *over = dt->get_overtaker();
-				if(over) {
-					if(!over->is_overtaking()) {
-						// otherwise the overtaken car would stop for us ...
-						if(  road_vehicle_t const* const car = obj_cast<road_vehicle_t>(dt)  ) {
-							convoi_t* const ocnv = car->get_convoi();
-							if(  ocnv  ) {
-								if(  next_lane<1  &&  !is_overtaking()  &&  !other_lane_blocked(false)  &&  !ocnv->is_overtaking()   &&  can_overtake( ocnv, (ocnv->get_state()==convoi_t::LOADING ? 0 : ocnv->get_akt_speed()), ocnv->get_length_in_steps()+ocnv->get_vehicle(0)->get_steps())  ) {
-									if(current_speed==0) {
-										ms_traffic_jam = 0;
-										current_speed = 48;
-									}
-									return true;
-								}
-							}
-						} else if(  private_car_t* const caut = obj_cast<private_car_t>(dt)  ) {
-							if(  caut  ) {
-								if(  next_lane<1  &&  !is_overtaking()  &&  !other_lane_blocked(false)  &&  !caut->is_overtaking()  &&  can_overtake(caut, caut->get_current_speed(), VEHICLE_STEPS_PER_TILE)  ) {
-									if(current_speed==0) {
-										ms_traffic_jam = 0;
-										current_speed = 48;
-									}
-									return true;
-								}
-							}
-						}
+		if(  over && overtaking_mode <= oneway_mode  ) {
+				if(!over->is_overtaking() && !is_overtaking() && can_overtake(over, over->get_current_speed(), over->get_length_in_steps())) {
+					// otherwise the overtaken car would stop for us ...
+					if(current_speed==0) {
+						ms_traffic_jam = 0;
+						current_speed = 48;
 					}
+					return true;
 				}
 				else {
-					// movingobj ... block road totally
 					frei = false;
 				}
-			}
 		}
-		else {
-			if(  !is_overtaking()  ) {
-				if(  dt  ) {
-					if(dt->is_stuck()) {
-						// previous vehicle is stuck => end of traffic jam ...
-						frei = false;
+		else if(  over && !is_overtaking()  ) {
+			if(dt->is_stuck()) {
+				// previous vehicle is stuck => end of traffic jam ...
+				frei = false;
+			}
+			else if(!over->is_overtaking()) {
+				// otherwise the overtaken car would stop for us ...
+				bool is_other_loading = false;
+				if(  road_vehicle_t const* const car = obj_cast<road_vehicle_t>(dt)  ) {
+					if(  convoi_t* const ocnv = car->get_convoi()  ) {
+						is_other_loading = ocnv->get_state()==convoi_t::LOADING;
 					}
-					else {
-						overtaker_t *over = dt->get_overtaker();
-						if(over) {
-							if(!over->is_overtaking()) {
-								// otherwise the overtaken car would stop for us ...
-								if(  road_vehicle_t const* const car = obj_cast<road_vehicle_t>(dt)  ) {
-									convoi_t* const ocnv = car->get_convoi();
-									if(  ocnv  ) {
-										if(  can_overtake( ocnv, (ocnv->get_state()==convoi_t::LOADING ? 0 : over->get_max_power_speed()), ocnv->get_length_in_steps()+ocnv->get_vehicle(0)->get_steps())  ) {
-											if(current_speed==0) {
-												ms_traffic_jam = 0;
-												current_speed = 48;
-											}
-											return true;
-										}
-									}
-								} else if(  private_car_t* const caut = obj_cast<private_car_t>(dt)  ) {
-									if(  caut  ) {
-										if(can_overtake(caut, caut->get_desc()->get_topspeed(), VEHICLE_STEPS_PER_TILE)) {
-											if(current_speed==0) {
-												ms_traffic_jam = 0;
-												current_speed = 48;
-											}
-											return true;
-										}
-									}
-								}
-							}
-						}
-						else {
-							// movingobj ... block road totally
-							frei = false;
-						}
+				}
+
+				if(  can_overtake( over, over->get_max_power_speed() * is_other_loading, over->get_length_in_steps())  ) { 
+					if(current_speed==0) {
+						ms_traffic_jam = 0;
+						current_speed = 48;
 					}
+					return true;
 				}
 			}
 		}
@@ -854,7 +810,7 @@ bool private_car_t::can_enter_tile(grund_t *gr)
 				const uint8 next_direction = ribi_type(dir);
 				const uint8 nextnext_direction = ribi_type(dir);
 				// test next field after way crossing
-				if(no_cars_blocking( test, NULL, next_direction, nextnext_direction, nextnext_direction, this, next_lane )) {
+				if(get_car_blocking( test, NULL, next_direction, nextnext_direction, nextnext_direction, this, next_lane )) {
 					return false;
 				}
 				// ok, left the crossing
@@ -880,7 +836,7 @@ bool private_car_t::can_enter_tile(grund_t *gr)
 
 	// If this car is on passing lane and the next tile prohibites overtaking, this vehicle must wait until traffic lane become safe.
 	if(  is_overtaking()  &&  str->get_overtaking_mode() == prohibited_mode  ) {
-		if(  vehicle_base_t* v = other_lane_blocked(false)  ) {
+		if(  vehicle_base_t* v = get_car_blocking_passing_lane(false)  ) {
 			if(  v->get_waytype() == road_wt  &&  judge_lane_crossing(get_90direction(), calc_direction(pos_next,pos_next_next), v->get_90direction(), true, true)) {
 				return false;
 			}
@@ -895,7 +851,7 @@ bool private_car_t::can_enter_tile(grund_t *gr)
 	}
 	// If this vehicle is on traffic lane and the next tile forces to go passing lane, this vehicle must wait until passing lane become safe.
 	if(  !is_overtaking()  &&  str->get_overtaking_mode() == inverted_mode  ) {
-		if(  vehicle_base_t* v = other_lane_blocked(false)  ) {
+		if(  vehicle_base_t* v = get_car_blocking_passing_lane(false)  ) {
 			if(  v->get_waytype() == road_wt  &&  judge_lane_crossing(get_90direction(), calc_direction(pos_next,pos_next_next), v->get_90direction(), false, true)) {
 				return false;
 			}
@@ -906,14 +862,14 @@ bool private_car_t::can_enter_tile(grund_t *gr)
 	}
 	// If this vehicle is forced to go back to traffic lane at the next tile and traffic lane is not safe to change lane, this vehicle should wait.
 	if(  str->get_overtaking_mode() > oneway_mode  &&  str->get_overtaking_mode() < inverted_mode  &&  get_tiles_overtaking() == 1  ) {
-		if(  vehicle_base_t* v = other_lane_blocked(false)  ) {
+		if(  vehicle_base_t* v = get_car_blocking_passing_lane(false)  ) {
 			if(  v->get_waytype() == road_wt  &&  judge_lane_crossing(get_90direction(), calc_direction(pos_next,pos_next_next), v->get_90direction(), true, true)) {
 				return false;
 			}
 		}
 	}
 	// If there is a vehicle that requests lane crossing, this vehicle must stop to yield space.
-	if(  vehicle_base_t* v = other_lane_blocked(true)  ) {
+	if(  vehicle_base_t* v = get_car_blocking_passing_lane(true)  ) {
 		if(  road_vehicle_t const* const at = obj_cast<road_vehicle_t>(v)  ) {
 			if(  at->get_convoi()->get_next_cross_lane()  &&  at==at->get_convoi()->back()  ) {
 				// vehicle must stop.
@@ -1320,7 +1276,7 @@ void private_car_t::hop(grund_t* to)
 	//decide if overtaking citycar should go back to the traffic lane.
 	if(  get_tiles_overtaking() == 1  &&  str->get_overtaking_mode() <= oneway_mode  ){
 		vehicle_base_t* v = NULL;
-		if(  (v = other_lane_blocked(false))  ) {
+		if(  (v = get_car_blocking_passing_lane(false))  ) {
 			//lane change denied
 			set_tiles_overtaking(3);
 		}
@@ -1696,20 +1652,20 @@ bool private_car_t::can_overtake( overtaker_t *other_overtaker, sint32 other_spe
 	return true;
 }
 
-vehicle_base_t* private_car_t::other_lane_blocked(const bool only_search_top) const{
+vehicle_base_t* private_car_t::get_car_blocking_passing_lane(const bool only_search_top) const{
 	//This function calculate whether the car can change lane.
 	// only_search_top == false: check only heading direction
 	// only_search_top == true: check all directions
 	grund_t *gr = welt->lookup(pos_next);
 	if(  gr  ) {
-		if(  vehicle_base_t* v = is_there_car(gr)  ) {
+		if(  vehicle_base_t* v = get_car_in_opposite_direction(gr)  ) {
 			return v;
 		}
 	}
 	if(  !only_search_top  ) {
 		gr = welt->lookup(get_pos());
 		if(  gr  ) {
-			if(  vehicle_base_t* v = is_there_car(gr)  ) {
+			if(  vehicle_base_t* v = get_car_in_opposite_direction(gr)  ) {
 				return v;
 			}
 		}
@@ -1718,7 +1674,7 @@ vehicle_base_t* private_car_t::other_lane_blocked(const bool only_search_top) co
 			grund_t *to = NULL;
 			if( gr && gr->get_neighbour(to, road_wt, ribi_t::nsew[r])  ) {
 				if(  to  ) {
-					if(  vehicle_base_t* v = is_there_car(gr)  ) {
+					if(  vehicle_base_t* v = get_car_in_opposite_direction(gr)  ) {
 						return v;
 					}
 				}
@@ -1728,46 +1684,22 @@ vehicle_base_t* private_car_t::other_lane_blocked(const bool only_search_top) co
 	return NULL;
 }
 
-vehicle_base_t* private_car_t::is_there_car (grund_t *gr) const
+vehicle_base_t* private_car_t::get_car_in_opposite_direction (grund_t *gr) const
 {
 	if(  gr == NULL  ) {
-		dbg->error( "private_car_t::is_there_car", "grund is invalid!" );
+		dbg->error( "private_car_t::get_car_in_opposite_direction", "grund is invalid!" );
 	}
 	assert(  gr  );
 	for(  uint8 pos=1;  pos < gr->get_top();  pos++  ) {
-		if(  vehicle_base_t* const v = obj_cast<vehicle_base_t>(gr->obj_bei(pos))  ) {
-			if(  v->get_typ()==obj_t::pedestrian  ) {
-				continue;
-			}
-			if(  road_vehicle_t const* const at = obj_cast<road_vehicle_t>(v)  ) {
-				if(  is_overtaking() && at->get_convoi()->is_overtaking()  ){
-					continue;
+		if(  vehicle_base_t* const vb = obj_cast<vehicle_base_t>(gr->obj_bei(pos))  ) {
+			overtaker_t* ov = vb->get_overtaker();
+
+			if( ov &&  !is_overtaking() && !(ov->is_overtaking())  ){
+				//Prohibit going on passing lane when facing traffic exists.
+				ribi_t::ribi other_direction = vb->get_direction();
+				if(  ribi_t::backward(get_direction()) == other_direction  ) {
+					return vb;
 				}
-				if(  !is_overtaking() && !(at->get_convoi()->is_overtaking())  ){
-					//Prohibit going on passing lane when facing traffic exists.
-					ribi_t::ribi other_direction = at->get_direction();
-					if(  ribi_t::backward(get_direction()) == other_direction  ) {
-						return v;
-					}
-					continue;
-				}
-				// speed zero check must be done by parent function.
-				return v;
-			}
-			else if(  private_car_t* const caut = obj_cast<private_car_t>(v)  ) {
-				if(  is_overtaking() && caut->is_overtaking()  ){
-					continue;
-				}
-				if(  !is_overtaking() && !(caut->is_overtaking())  ){
-					//Prohibit going on passing lane when facing traffic exists.
-					ribi_t::ribi other_direction = caut->get_direction();
-					if(  ribi_t::backward(get_direction()) == other_direction  ) {
-						return v;
-					}
-					continue;
-				}
-				// speed zero check must be done by parent function.
-				return v;
 			}
 		}
 	}
