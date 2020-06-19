@@ -464,7 +464,7 @@ private_car_t::private_car_t(grund_t* gr, koord const target) :
 
 sync_result private_car_t::sync_step(uint32 delta_t)
 {
-	//time_to_life -= delta_t;
+	time_to_life -= delta_t;
 	if(  time_to_life<=0 ) {
 		return SYNC_DELETE;
 	}
