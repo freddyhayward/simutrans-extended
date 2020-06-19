@@ -774,7 +774,7 @@ bool private_car_t::can_enter_tile(grund_t *gr)
 					}
 				}
 
-				if(  can_overtake( over, over->get_max_power_speed() * is_other_loading, over->get_length_in_steps())  ) { 
+				if(  can_overtake( over, is_other_loading ? 0 : over->get_max_power_speed(), over->get_length_in_steps())  ) { 
 					if(current_speed==0) {
 						ms_traffic_jam = 0;
 						current_speed = 48;

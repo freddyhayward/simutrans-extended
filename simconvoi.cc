@@ -7335,7 +7335,7 @@ bool convoi_t::can_overtake(overtaker_t *other_overtaker, sint32 other_speed, si
 		return false;
 	}
 	// Do not overtake a vehicle which has higher max_power_speed than this.
-	if(  other_overtaker->get_max_power_speed() - this->get_max_power_speed() > kmh_to_speed(2)  ) {
+	if(  other_overtaker->get_max_power_speed() - get_max_power_speed() > kmh_to_speed(2)  ) {
 		return false;
 	}
 
@@ -7442,26 +7442,32 @@ bool convoi_t::can_overtake(overtaker_t *other_overtaker, sint32 other_speed, si
 
 		// Check for other vehicles
 		const uint8 top = gr->get_top();
-		for(  uint8 j=1;  j<top;  j++ ) {
-			if (vehicle_base_t* const v = obj_cast<vehicle_base_t>(gr->obj_bei(j))) {
+		for(  uint8 j=1;  j<top;  j++ ) 
+		{
+			if(  vehicle_base_t* const vb = obj_cast<vehicle_base_t>(gr->obj_bei(j))  ) 
+			{
 				// check for other traffic on the road
-				const overtaker_t *ov = v->get_overtaker();
-				if(ov) {
-					if(this!=ov  &&  other_overtaker!=ov) {
-						if(  overtaking_mode_loop <= oneway_mode  ) {
+				if(  overtaker_t* const ov = vb->get_overtaker()  )
+				{
+					if(  ov != this && ov != other_overtaker  ) 
+					{
+						if(  overtaking_mode_loop <= oneway_mode  ) 
+						{
 							//If ov goes same directory, should not return false
-							ribi_t::ribi their_direction = ribi_t::backward( front()->calc_direction(pos_prev, pos_next) );
-							vehicle_base_t* const v = obj_cast<vehicle_base_t>(gr->obj_bei(j));
-							if (v && v->get_direction() == their_direction && v->get_overtaker()) {
+							ribi_t::ribi their_direction = ribi_t::backward( front()->calc_direction(pos_prev, pos_next)  );
+							if(  vb->get_direction() == their_direction  ) 
+							{
 								return false;
 							}
 						}
-						else {
+						else 
+						{
 							return false;
 						}
 					}
 				}
-				else if(  v->get_waytype()==road_wt  &&  v->get_typ()!=obj_t::pedestrian  ) {
+				else if(  vb->get_waytype()==road_wt && vb->get_typ()!=obj_t::pedestrian  ) 
+				{
 					// sheeps etc.
 					return false;
 				}
