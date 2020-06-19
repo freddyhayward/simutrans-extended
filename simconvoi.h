@@ -1038,6 +1038,7 @@ public:
 	 * @author neroden
 	 */
 	uint32 get_length_in_steps() OVERRIDE { return get_length() * VEHICLE_STEPS_PER_CARUNIT; }
+	uint16 get_steps() OVERRIDE;
 
 	/**
 	 * Add the costs for travelling one tile

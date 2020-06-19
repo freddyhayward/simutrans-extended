@@ -775,8 +775,8 @@ public:
 	virtual overtaker_t* get_overtaker();
 	virtual convoi_t* get_overtaker_cv();
 
-	virtual vehicle_base_t* get_car_blocking_passing_lane(const bool only_search_top = false, sint8 offset = 0) const;
-	virtual vehicle_base_t* other_lane_blocked_offset() const { return get_car_blocking_passing_lane(false,1); }
+	virtual vehicle_base_t* get_vehicle_blocking_other_lane(const bool only_search_top = false, sint8 offset = 0) const;
+	virtual vehicle_base_t* other_lane_blocked_offset() const { return get_vehicle_blocking_other_lane(false,1); }
 };
 
 

@@ -6,6 +6,8 @@
 #ifndef VEHICLE_OVERTAKER_H
 #define VEHICLE_OVERTAKER_H
 
+#define MIN_DIFF_KMH_OVERTAKING 2
+
 
 /**
  * All vehicles that can overtake must include this class
@@ -73,6 +75,7 @@ public:
 	virtual sint32 get_max_power_speed() = 0;
 	virtual sint32 get_current_speed() = 0;
 	virtual uint32 get_length_in_steps() = 0;
+	virtual uint16 get_steps() = 0;
 
 	sint8 get_tiles_overtaking() const { return tiles_overtaking; }
 

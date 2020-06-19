@@ -7335,7 +7335,7 @@ bool convoi_t::can_overtake(overtaker_t *other_overtaker, sint32 other_speed, si
 		return false;
 	}
 	// Do not overtake a vehicle which has higher max_power_speed than this.
-	if(  other_overtaker->get_max_power_speed() - get_max_power_speed() > kmh_to_speed(2)  ) {
+	if(  other_overtaker->get_max_power_speed() - get_max_power_speed() > kmh_to_speed(MIN_DIFF_KMH_OVERTAKING)  ) {
 		return false;
 	}
 
@@ -7343,7 +7343,7 @@ bool convoi_t::can_overtake(overtaker_t *other_overtaker, sint32 other_speed, si
 	// On one-way road, other_speed is current speed. Otherwise, other_speed is the theoretical max power speed.
 	bool in_congestion = false;
 	int diff_speed = akt_speed - other_speed;
-	if(  diff_speed < kmh_to_speed(2)  ) {
+	if(  diff_speed < kmh_to_speed(MIN_DIFF_KMH_OVERTAKING)  ) {
 		// Overtaking in traffic jam is only accepted on one-way road.
 		if(  overtaking_mode <= oneway_mode  ) {
 			grund_t *gr = welt->lookup(get_pos());
@@ -7454,8 +7454,8 @@ bool convoi_t::can_overtake(overtaker_t *other_overtaker, sint32 other_speed, si
 						if(  overtaking_mode_loop <= oneway_mode  ) 
 						{
 							//If ov goes same directory, should not return false
-							ribi_t::ribi their_direction = ribi_t::backward( front()->calc_direction(pos_prev, pos_next)  );
-							if(  vb->get_direction() == their_direction  ) 
+							ribi_t::ribi opposite_direction = ribi_t::backward( front()->calc_direction(pos_prev, pos_next)  );
+							if(  vb->get_direction() == opposite_direction  ) 
 							{
 								return false;
 							}
@@ -7519,11 +7519,11 @@ bool convoi_t::can_overtake(overtaker_t *other_overtaker, sint32 other_speed, si
 		}
 
 		// Check for other vehicles in facing direction
-		ribi_t::ribi their_direction = ribi_t::backward( front()->calc_direction(pos_prev, pos_next) );
+		ribi_t::ribi opposite_direction = ribi_t::backward( front()->calc_direction(pos_prev, pos_next) );
 		const uint8 top = gr->get_top();
 		for(  uint8 j=1;  j<top;  j++ ) {
 			vehicle_base_t* const v = obj_cast<vehicle_base_t>(gr->obj_bei(j));
-			if (v && v->get_direction() == their_direction && v->get_overtaker()) {
+			if (v && v->get_direction() == opposite_direction && v->get_overtaker()) {
 				return false;
 			}
 		}
@@ -8775,4 +8775,8 @@ bool convoi_t::check_way_constraints_of_all_vehicles(const weg_t& way) const
 		}
 	}
 	return true;
+}
+
+uint16 convoi_t::get_steps() {
+	return front()->get_steps();
 }

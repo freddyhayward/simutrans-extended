@@ -162,7 +162,8 @@ public:
 	uint32 get_max_speed() OVERRIDE;
 	inline sint32 get_max_power_speed() OVERRIDE {return get_max_speed();}
 
-	uint32 get_length_in_steps() OVERRIDE {return VEHICLE_STEPS_PER_TILE;} //TODO: This value is probably wrong
+	uint32 get_length_in_steps() OVERRIDE {return VEHICLE_STEPS_PER_CARUNIT;} //TODO: This value is probably wrong
+	uint16 get_steps() OVERRIDE {return vehicle_base_t::get_steps();}
 
 	const char *get_name() const OVERRIDE {return "Verkehrsteilnehmer";}
 	//typ get_typ() const { return road_user; }
@@ -197,8 +198,8 @@ public:
 	// Overtaking for city cars
 	virtual bool can_overtake(overtaker_t *other_overtaker, sint32 other_speed, sint16 steps_other) OVERRIDE;
 
-	virtual vehicle_base_t* get_car_blocking_passing_lane(const bool only_search_top) const;
-	vehicle_base_t* get_car_in_opposite_direction(grund_t *gr) const; // This is a helper function of get_car_blocking_passing_lane
+	virtual vehicle_base_t* get_vehicle_blocking_other_lane(const bool only_search_top) const;
+	vehicle_base_t* get_vehicle_in_opposite_direction(grund_t *gr) const; // This is a helper function of get_vehicle_blocking_other_lane
 
 	virtual void reflesh(sint8,sint8) OVERRIDE;
 
