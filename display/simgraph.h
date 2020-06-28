@@ -129,9 +129,9 @@ KOORD_VAL display_set_base_raster_width(KOORD_VAL new_raster);
 */
 #define MAX_ZOOM_FACTOR (9)
 #define ZOOM_NEUTRAL (3)
-static uint32 zoom_factor = ZOOM_NEUTRAL;
-static sint32 zoom_num[MAX_ZOOM_FACTOR + 1] = { 2, 3, 4, 1, 3, 5, 1, 3, 1, 1 };
-static sint32 zoom_den[MAX_ZOOM_FACTOR + 1] = { 1, 2, 3, 1, 4, 8, 2, 8, 4, 8 };
+extern uint32 zoom_factor;
+extern sint32 zoom_num[MAX_ZOOM_FACTOR + 1];
+extern sint32 zoom_den[MAX_ZOOM_FACTOR + 1];
 
 int zoom_factor_up();
 int zoom_factor_down();

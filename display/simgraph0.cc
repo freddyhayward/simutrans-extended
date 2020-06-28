@@ -29,6 +29,8 @@ KOORD_VAL display_set_base_raster_width(KOORD_VAL)
 	return 0;
 }
 
+uint32 zoom_factor = ZOOM_NEUTRAL;
+
 void set_zoom_factor(int)
 {
 }
