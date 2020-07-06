@@ -1212,11 +1212,11 @@ void way_builder_t::do_terraforming()
 				from->set_grund_hang( slope_t::flat );
 				route[i].z = from->get_hoehe();
 			}
-			else if(  from_slope != slope_t::raised / 2  ) {
+			else if(  from_slope != slope_t::raised  ) {
 				// bit of a hack to recognise single height slopes shifted up 1
-				if(  from_slope > slope_t::raised / 2  &&  slope_t::is_single( from_slope-slope_t::raised / 2 )  ) {
+				if(  from_slope > slope_t::raised  &&  slope_t::is_single( from_slope-slope_t::raised )  ) {
 					from->set_hoehe( from->get_hoehe() + 1 );
-					from_slope -= slope_t::raised / 2;
+					from_slope -= slope_t::raised;
 					route[i].z = from->get_hoehe();
 				}
 				from->set_grund_hang( from_slope );
@@ -1234,16 +1234,16 @@ void way_builder_t::do_terraforming()
 		}
 		// change slope of to
 		if(  to_slope != to->get_grund_hang()  ) {
-			if(  to_slope == slope_t::raised  ) {
+			if(  to_slope == slope_t::double_raised  ) {
 				to->set_hoehe( to->get_hoehe() + 2 );
 				to->set_grund_hang( slope_t::flat );
 				route[i + 1].z = to->get_hoehe();
 			}
-			else if(  to_slope != slope_t::raised / 2  ) {
+			else if(  to_slope != slope_t::raised  ) {
 				// bit of a hack to recognise single height slopes shifted up 1
-				if(  to_slope > slope_t::raised / 2  &&  slope_t::is_single( to_slope-slope_t::raised / 2 )  ) {
+				if(  to_slope > slope_t::raised  &&  slope_t::is_single( to_slope-slope_t::raised )  ) {
 					to->set_hoehe( to->get_hoehe() + 1 );
-					to_slope -= slope_t::raised / 2;
+					to_slope -= slope_t::raised;
 					route[i + 1].z = to->get_hoehe();
 				}
 				to->set_grund_hang(to_slope);

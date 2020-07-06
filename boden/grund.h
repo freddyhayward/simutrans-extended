@@ -576,6 +576,7 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 	* @author Hj. Malthaner
 	*/
 	const char * kann_alle_obj_entfernen(const player_t *player) const { return objlist.kann_alle_entfernen(player,offsets[flags/has_way1]); }
+	inline bool can_remove_all_objects(const player_t *player) const { return kann_alle_obj_entfernen(player) == NULL; }
 
 	/**
 	* Interface zur Bauen und abfragen von Gebaeuden
@@ -631,6 +632,8 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 	}
 
 	bool has_two_ways() const { return flags&has_way2; }
+
+	uint8 count_ways() const { return ((flags&has_way1) != 0) + ((flags&has_way2) != 0); }
 
 	bool hat_weg(waytype_t typ) const { return get_weg(typ)!=NULL; }
 
@@ -700,6 +703,8 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 
 	virtual slope_t::type get_weg_hang() const { return get_grund_hang(); }
 
+	inline bool is_flat() const {return get_grund_hang() == slope_t::flat; }
+
 	/*
 	 * Search a matching wayobj
 	 */
@@ -747,6 +752,9 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 	 * @author V. Meyer
 	 */
 	sint32 weg_entfernen(waytype_t wegtyp, bool ribi_rem);
+
+	bool ways_forbid_double_slopes() const;
+	bool is_terraforming_obstructed() const;
 
 	bool removing_road_would_disconnect_city_building();
 	bool removing_way_would_disrupt_public_right_of_way(waytype_t wt);
@@ -810,6 +818,10 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 	 *
 	 */
 	bool get_neighbour(grund_t *&to, waytype_t type, ribi_t::ribi r ) const;
+
+	minivec_tpl<grund_t*> get_all_neighbours() const;
+
+	ribi_t::ribi get_all_ribis() const;
 
 	/**
 	 * Description;

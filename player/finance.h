@@ -46,6 +46,8 @@ char const *const NOTICE_DEPOT_BAD_POS = "Cannot built depot here!";
 */
 char const *const NOTICE_TILE_FULL = "Tile not empty.";
 
+char const *const NOTICE_MAX_HEIGHT_DIFF = "Maximum tile height difference reached.";
+
 /**
  * Message returned when a company tries to make a public way when public ways are disabled.
  */

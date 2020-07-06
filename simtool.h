@@ -9,6 +9,8 @@
 
 /// New OO tool system
 
+#include "boden/grund.h"
+#include "dataobj/ribi.h"
 #include "simtypes.h"
 #include "simworld.h"
 #include "simmenu.h"
@@ -24,6 +26,7 @@
 
 #include "player/simplay.h"
 
+#include "tpl/minivec_tpl.h"
 #include "tpl/slist_tpl.h"
 
 class koord3d;
@@ -121,6 +124,13 @@ public:
 
 /* slope tool definitions */
 class tool_setslope_t : public tool_t {
+
+	typedef struct slope_change_t {
+		grund_t* gr;
+		koord3d new_pos;
+		slope_t::type new_slope;
+	} slope_change_t ;
+
 public:
 	tool_setslope_t() : tool_t(TOOL_SETSLOPE | GENERAL_TOOL) {}
 	/**
@@ -130,11 +140,13 @@ public:
 	* @param slope the slope type
 	* @author Hj. Malthaner
 	*/
-	static const char *tool_set_slope_work( player_t *player, koord3d pos, int slope );
+	static const char *tool_set_slope_work(player_t *player, koord3d pos, sint8 slope);
 	char const* get_tooltip(player_t const*) const OVERRIDE { return tooltip_with_price("Built artifical slopes", welt->get_settings().cst_set_slope); }
 	bool is_init_network_save() const OVERRIDE { return true; }
 	char const* check_pos(player_t*, koord3d) OVERRIDE;
 	char const* work(player_t* const player, koord3d const k) OVERRIDE { return tool_set_slope_work(player, k, atoi(default_param)); }
+private:
+	static const char *precheck_set_slope(grund_t *gr, player_t *player, koord3d pos, sint8 slope);
 };
 
 class tool_restoreslope_t : public tool_t {

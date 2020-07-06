@@ -419,3 +419,27 @@ slope_t::type slope_type(ribi_t::ribi r)
 {
 	return hang_from_ribi[r];
 }
+
+
+ribi_t::ribi broken_by_slope_change(slope_t::type slope, slope_t::type command) 
+{
+	slope_t::type new_slope = slope_t::applied_way_slope(slope, command);
+	ribi_t::ribi ribi = ribi_t::none;
+	if(corner_ne(slope) != corner_ne(new_slope))
+	{
+		ribi |= ribi_t::northeast;
+	}
+	if(corner_se(slope) != corner_se(new_slope))
+	{
+		ribi |= ribi_t::southeast;
+	}
+	if(corner_sw(slope) != corner_sw(new_slope))
+	{
+		ribi |= ribi_t::southwest;
+	}
+	if(corner_nw(slope) != corner_nw(new_slope))
+	{
+		ribi |= ribi_t::northwest;
+	}
+	return ribi;
+}

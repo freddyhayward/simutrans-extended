@@ -1364,7 +1364,7 @@ slope_t::type grund_t::get_disp_way_slope() const
 			const slope_t::type slope = get_grund_hang();
 			if(  slope != 0  ) {
 				// for half height slopes we want all corners at 1, for full height all corners at 2
-				return (slope & 7) ? slope_t::raised / 2 : slope_t::raised;
+				return (slope & 7) ? slope_t::raised : slope_t::double_raised;
 			}
 			else {
 				return get_weg_hang();
@@ -2481,6 +2481,42 @@ bool grund_t::removing_way_would_disrupt_public_right_of_way(waytype_t wt)
 		}
 	}
 	return false;
+}
+
+bool grund_t::ways_forbid_double_slopes() const 
+{
+	return (get_weg_nr(0)  &&  !get_weg_nr(0)->get_desc()->has_double_slopes())
+		|| (get_weg_nr(1)  &&  !get_weg_nr(1)->get_desc()->has_double_slopes())
+		|| (get_leitung()  &&  !get_leitung()->get_desc()->has_double_slopes());
+}
+
+bool grund_t::is_terraforming_obstructed() const
+{
+	return get_grund_hang()!=get_weg_hang()
+		|| get_halt().is_bound()
+		|| get_building()
+		|| (get_leitung() && hat_wege()) //cannot move powerline and way simultaneously
+		|| get_weg(air_wt)
+		|| find<label_t>()
+		|| get_typ()==grund_t::brueckenboden; //cannot alter bridge support
+}
+
+ribi_t::ribi grund_t::get_all_ribis() const 
+{
+	ribi_t::ribi ribis = 0;
+	if(hat_wege())
+	{
+		ribis |= get_weg_nr(0)->get_ribi_unmasked();
+		if(get_weg_nr(1))
+		{
+			ribis |= get_weg_nr(1)->get_ribi_unmasked();
+		}
+	}
+
+	if(get_leitung()) {
+		ribis |= get_leitung()->get_ribi();
+	}
+	return ribis;
 }
 
 // this function is called many many times => make it as fast as possible

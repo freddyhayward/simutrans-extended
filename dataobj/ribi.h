@@ -58,7 +58,8 @@ public:
 		northeast = 9,  ///< NE corner
 		southeast = 3,  ///< SE corner
 		southwest = 1,  ///< SW corner
-		raised = 80,    ///< special meaning: used as slope of bridgeheads and in terraforming tools
+		raised = 40,
+		double_raised = 80,    ///< special meaning: used as slope of bridgeheads and in terraforming tools
 	};
 
 
@@ -89,6 +90,44 @@ public:
 	* @returns 1 for single upwards and 2 for double upwards
 	*/
 	static sint16 get_sloping_upwards(const type slope, const sint16 relative_pos_x, const sint16 relative_pos_y);
+
+	static type applied_way_slope(const type slope, const type command)
+	{
+		assert(is_way(slope)); /// This should never be called for a slope that cannot support a way.
+
+		if(command==ALL_UP_SLOPE)
+		{
+			if(is_doubles(slope))
+			{
+				// Change double slope to single slope one tile up.
+				return raised + slope/2;
+			}
+			else 
+			{
+				// Change either single slope or flat to flat one tile up.
+				return raised;
+			}
+		}
+		else if(command == ALL_DOWN_SLOPE)
+		{
+			if(is_doubles(slope))
+			{
+				// Change double slope to single slope at same base height.
+				return slope/2;
+			}
+			else if(is_single(slope))
+			{
+				// Change single slope to flat at same base height
+				return flat;
+			}
+			else if(slope == flat)
+			{
+				// This is probably incorrect behaviour. It should lower the tile.
+				return -raised;
+			}
+		}
+		return command;
+	}
 };
 
 
@@ -197,6 +236,12 @@ public:
 	/// Convert building layout to ribi (four rotations), use doubles in case of two rotations
 	static const ribi layout_to_ribi[4];	// building layout to ribi (for four rotations, for two use doubles()!
 
+	/// Return whether a ribi is a subset of another.
+	static inline bool included_in(ribi x, ribi y) { return (x|y) == y; }
+
+	// Return ribis common to both sets. Would be called intersection but that could be confused for actual road intersections.
+	static inline ribi get_ribis_in_common(ribi x, ribi y) { return x&y; }
+
 	static bool is_twoway(ribi x) { return (flags[x] & twoway) != 0; }
 	static bool is_threeway(ribi x) { return (flags[x] & threeway) != 0; }
 	static bool is_perpendicular(ribi x, ribi y);
@@ -210,6 +255,8 @@ public:
 	static ribi doubles(ribi x) { return doppelr[x]; }
 	/// Backward direction for single ribi's, bitwise-NOT for all others
 	static ribi backward(ribi x) { return backwards[x]; }
+
+	static inline ribi double_backwards(ribi x) { return backward(doubles(x)); }
 
 	/**
 	 * Same as rueckwaerts, but for single directions only.
@@ -255,6 +302,9 @@ ribi_t::ribi ribi_type(const koord3d& dir);
 */
 ribi_t::ribi ribi_type(slope_t::type slope);
 
+/* Calculate the directions altered by the conversion of one slope to another. */
+ribi_t::ribi broken_by_slope_change(slope_t::type slope1, slope_t::type slope2);
+
 /**
 * Calculate direction bit for travel from @p from to @p to.
 */
@@ -262,6 +312,14 @@ template<class K1, class K2>
 ribi_t::ribi ribi_type(const K1&from, const K2& to)
 {
 	return ribi_typ_intern(to.x - from.x, to.y - from.y);
+}
+
+/* Check whether a slope could support a given combination of directions. */
+inline bool is_compatible(ribi_t::ribi ribis, slope_t::type slope) 
+{ 
+	ribi_t::ribi r = ribi_t::double_backwards(ribis);
+	ribi_t::ribi s = ribi_t::double_backwards(ribi_type(slope));
+	return (s|r) <= s; 
 }
 
 #endif
