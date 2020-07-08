@@ -1210,11 +1210,6 @@ const char *tool_restoreslope_t::check_pos( player_t *, koord3d pos)
 
 const char *tool_setslope_t::precheck_set_slope( grund_t *gr, player_t *player, koord3d pos, sint8 new_slope )
 {
-	if(  gr->get_grund_hang() == new_slope  )
-	{
-		return "";
-	}
-
 	koord k(pos.get_2d());
 
 	sint8 water_hgt = welt->get_water_hgt( k );
@@ -1283,7 +1278,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 	// slopes may affect the position and the total height!
 	koord3d new_pos = pos;
 
-	minivec_tpl<slope_change_t*> slope_changes;
+	minivec_tpl<slope_change_t> slope_changes;
 	slope_change_t initial_change = {gr, gr->get_pos(), new_slope};
 
 	if(  gr->hat_wege() || gr->get_leitung() ) 
@@ -1292,7 +1287,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 
 		// check the resulting slope
 		ribi_t::ribi ribis = gr->get_all_ribis();
-		ribi_t::ribi broken_ribis = ribi_t::get_ribis_in_common(ribis, broken_by_slope_change(gr->get_weg_hang(), new_slope));
+		ribi_t::ribi broken_ribis = ribi_t::get_ribis_in_common(ribis, broken_by_slope_change(gr->get_weg_hang(), initial_change.new_slope));
 		minivec_tpl<grund_t*> neighbours_to_change;
 
 		if(  gr->hat_wege()  ) 
@@ -1327,25 +1322,39 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 			}
 		}
 
+		if(initial_change.new_slope == slope_t::raised || initial_change.new_slope == ALL_UP_SLOPE) 
+		{
+			initial_change.new_pos.z++;
+			initial_change.new_slope = slope_t::flat;
+		}
+		else if(initial_change.new_slope == -40 || initial_change.new_slope == ALL_DOWN_SLOPE)
+		{
+			initial_change.new_pos.z--;
+		}
 		FOR(minivec_tpl<grund_t*>, const& other, neighbours_to_change) 
 		{
+			slope_t::type mended_slope = other->get_grund_hang();
+			sint8 diff = slope_t::min_diff(initial_change.new_slope, other->get_grund_hang()) + (initial_change.new_pos.z - other->get_hoehe());
+			fprintf(stderr, "%d\n", diff);
+			const char *err = precheck_set_slope(other, player, other->get_pos(), mended_slope);
+			if(err != NULL) {
+				fprintf(stderr, "%d ->%d: %s\n", other->get_grund_hang(), mended_slope, err);
+				return err;
+			}
 			slope_change_t other_change = {
 				other,
 				other->get_pos(),
-				slope_t::applied_way_slope(other->get_weg_hang(), new_slope) // placeholder behaviour
+				mended_slope // placeholder behaviour
 			};
 
-			const char *err = precheck_set_slope(other, player, other->get_pos(), other_change.new_slope);
-			if(err != NULL) {
-				return err;
-			}
-			slope_changes.append_unique(&other_change);
+			slope_changes.append(other_change);
 		}
 
 
 	}
 	else
 	{
+		// There is no way, so just change the original tile.
 		if(  new_slope == ALL_DOWN_SLOPE  )
 		{
 			initial_change.new_slope = slope_t::flat;
@@ -1367,30 +1376,27 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 		}
 	}
 
-	slope_changes.append_unique(&initial_change);
+	slope_changes.append(initial_change);
 
 	/* Prepare and check all potential changes */
 	/* NOTE: This mutates the changes, but does not apply them */
 	const uint8 max_hdiff = ground_desc_t::double_grounds ?  2 : 1;
-	FOR(minivec_tpl<slope_change_t*>, const& change, slope_changes)
+	FOR(minivec_tpl<slope_change_t>, change, slope_changes)
 	{
-		const grund_t* gr = change->gr;
+		const grund_t* gr = change.gr;
 		const koord k = gr->get_pos().get_2d();
-		const sint8 hgt = change->gr->get_hoehe();
+		const sint8 hgt = gr->get_hoehe();
+
+		const sint8 new_hgt = change.new_pos.z;
 		const sint8 water_hgt = welt->get_water_hgt( k ); 
+
 		sint8 water_table = (water_hgt >= (hgt + (gr->get_grund_hang() ? 1 : 0))) ? water_hgt : welt->get_groundwater() - 4;
 		sint8 min_neighbour_height = hgt;
-		if(change->new_slope == slope_t::raised || change->new_slope == ALL_UP_SLOPE) 
-		{
-			change->new_pos.z++;
-			change->new_slope = slope_t::flat;
-		}
-		else if(change->new_slope == -40 || change->new_slope == ALL_DOWN_SLOPE)
-		{
-			change->new_pos.z--;
 
-			for(  sint16 i = 0 ;  i < 8 ;  i++  ) {
-				const koord neighbour = change->gr->get_pos().get_2d() + koord::neighbours[i];
+		 if(new_hgt < hgt)
+		{
+			for(  sint8 i = 0 ;  i < 8 ;  i++  ) {
+				const koord neighbour = change.gr->get_pos().get_2d() + koord::neighbours[i];
 
 				if(  welt->is_within_grid_limits( neighbour )  ) {
 					grund_t *other = welt->lookup_kartenboden( neighbour );
@@ -1404,37 +1410,36 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 				}
 			}
 
-			if(  water_table>change->new_pos.z  ||  (water_table == change->new_pos.z  &&  min_neighbour_height < change->new_pos.z)  ) {
+			if(  water_table>change.new_pos.z  ||  (water_table == change.new_pos.z  &&  min_neighbour_height < change.new_pos.z)  ) {
 				// do not lower tiles when it will be below water level
 				return NOTICE_TILE_FULL;
 			}
 		}
 
 		// check whether the player can raise flat land out of the water (usually, only the public service can.)
-		if( gr->is_water()  &&  (hgt > water_hgt  ||  change->new_slope != slope_t::flat) && !welt->can_flatten_tile( player, k, water_hgt, false, true )  )
+		if( gr->is_water()  &&  (hgt > water_hgt  ||  change.new_slope != slope_t::flat) && !welt->can_flatten_tile( player, k, water_hgt, false, true )  )
 		{
 			return NOTICE_TILE_FULL;
 		}
 
-		const sint16 new_hgt = change->new_pos.z;
 		// check for grounds/tunnels/elevated ways above/below
 		if(  new_hgt >= hgt  ) 
 		{
-			grund_t *gr_above = welt->lookup( change->new_pos + koord3d(0, 0, 1) );
+			grund_t *gr_above = welt->lookup( change.new_pos + koord3d(0, 0, 1) );
 			if(  !gr_above  ) {
-				gr_above = welt->lookup( change->new_pos + koord3d(0, 0, 2) );
+				gr_above = welt->lookup( change.new_pos + koord3d(0, 0, 2) );
 			}
 			if(  !gr_above  &&  welt->get_settings().get_way_height_clearance()==2  &&  (gr->hat_wege()  ||  gr->get_leitung())  ) {
-				gr_above = welt->lookup( change->new_pos + koord3d(0, 0, 3) );
+				gr_above = welt->lookup( change.new_pos + koord3d(0, 0, 3) );
 			}
 			// slope may alter amount of clearance required
-			if(  gr_above  &&  gr_above->get_hoehe() - new_hgt + slope_t::min_diff( gr_above->get_weg_hang(), change->new_slope ) < welt->get_settings().get_way_height_clearance()  ) {
+			if(  gr_above  &&  gr_above->get_hoehe() - new_hgt + slope_t::min_diff( gr_above->get_weg_hang(), change.new_slope ) < welt->get_settings().get_way_height_clearance()  ) {
 				return NOTICE_TILE_FULL;
 			}
 		}
 		else if(  new_hgt <= hgt  ) 
 		{
-			grund_t *gr_below = welt->lookup( change->new_pos + koord3d(0, 0, -1) );
+			grund_t *gr_below = welt->lookup( change.new_pos + koord3d(0, 0, -1) );
 			if(  !gr_below  ) {
 				gr_below = welt->lookup( new_pos + koord3d(0, 0, -2) );
 			}
@@ -1466,20 +1471,20 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 	}
 
 	/* Apply all changes */
-	FOR(minivec_tpl<slope_change_t*>, const& change, slope_changes)
+	FOR(minivec_tpl<slope_change_t>, change, slope_changes)
 	{
-		grund_t* gr = change->gr;
+		grund_t* gr = change.gr;
 		assert(gr);
 
 		const koord3d old_pos = gr->get_pos();
 		const koord k = old_pos.get_2d();
-		const koord3d new_pos = change->new_pos;
+		const koord3d new_pos = change.new_pos;
 
-		const sint16 hgt = change->new_pos.z;
+		const sint16 hgt = change.new_pos.z;
 		const sint8 water_hgt = welt->get_water_hgt(k); 
 
 		const slope_t::type old_slope = gr->get_grund_hang();
-		const slope_t::type new_slope = change->new_slope;
+		const slope_t::type new_slope = change.new_slope;
 
 		assert(old_pos != new_pos || old_slope != new_slope);
 
