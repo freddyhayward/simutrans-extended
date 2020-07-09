@@ -8,6 +8,7 @@
 #include <string.h>
 #include <math.h>
 
+#include "dataobj/koord.h"
 #include "dataobj/koord3d.h"
 #include "dataobj/ribi.h"
 #include "path_explorer.h"
@@ -1333,19 +1334,42 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 		}
 		FOR(minivec_tpl<grund_t*>, const& other, neighbours_to_change) 
 		{
-			slope_t::type mended_slope = other->get_grund_hang();
-			sint8 diff = slope_t::min_diff(initial_change.new_slope, other->get_grund_hang()) + (initial_change.new_pos.z - other->get_hoehe());
-			fprintf(stderr, "%d\n", diff);
-			const char *err = precheck_set_slope(other, player, other->get_pos(), mended_slope);
+			const slope_t::type old_slope_initial = gr->get_grund_hang();
+			const slope_t::type new_slope_initial = initial_change.new_slope;
+			const slope_t::type old_slope_other = other->get_grund_hang();
+			slope_t::type new_slope_other = old_slope_other;
+
+			const sint16 old_hgt_initial = gr->get_hoehe();
+			const sint16 new_hgt_initial = initial_change.new_pos.z;
+			const sint16 old_hgt_other = other->get_hoehe();
+
+			koord3d new_pos_other = other->get_pos();
+
+			const koord k_initial = gr->get_pos().get_2d();
+			const koord k_other = other->get_pos().get_2d();
+
+
+			if(new_hgt_initial > old_hgt_initial)
+			{
+				if(old_slope_other == slope_t::flat)
+				{
+					new_slope_other = slope_type(k_initial - k_other);
+				}
+			}
+			else if(new_hgt_initial < old_hgt_initial)
+			{
+				if(old_slope_other == slope_t::flat)
+				{
+					new_slope_other = slope_type(k_other - k_initial);
+				}
+			}
+
+			const char *err = precheck_set_slope(other, player, other->get_pos(), new_slope);
 			if(err != NULL) {
-				fprintf(stderr, "%d ->%d: %s\n", other->get_grund_hang(), mended_slope, err);
 				return err;
 			}
-			slope_change_t other_change = {
-				other,
-				other->get_pos(),
-				mended_slope // placeholder behaviour
-			};
+
+			slope_change_t other_change = {other, new_pos_other, new_slope_other};
 
 			slope_changes.append(other_change);
 		}
