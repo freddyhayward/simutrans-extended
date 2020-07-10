@@ -1284,11 +1284,14 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 
 	if(  gr->hat_wege() || gr->get_leitung() ) 
 	{
-		initial_change.new_slope = slope_t::applied_way_slope(gr->get_weg_hang(), new_slope);
+		slope_t::slopediff_t slopediff = slope_t::applied_way_slope_command(gr->get_weg_hang(), new_slope);
+
+		initial_change.new_slope = slopediff.slope;
+		initial_change.new_pos.z += slopediff.hdiff;
 
 		// check the resulting slope
 		ribi_t::ribi ribis = gr->get_all_ribis();
-		ribi_t::ribi broken_ribis = ribi_t::get_ribis_in_common(ribis, broken_by_slope_change(gr->get_weg_hang(), initial_change.new_slope));
+		ribi_t::ribi broken_ribis = ribi_t::get_ribis_in_common(ribis, broken_by_slope_change(gr->get_weg_hang(), new_slope));
 		minivec_tpl<grund_t*> neighbours_to_change;
 
 		if(  gr->hat_wege()  ) 
@@ -1322,16 +1325,6 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 				}
 			}
 		}
-
-		if(initial_change.new_slope == slope_t::raised || initial_change.new_slope == ALL_UP_SLOPE) 
-		{
-			initial_change.new_pos.z++;
-			initial_change.new_slope = slope_t::flat;
-		}
-		else if(initial_change.new_slope == -40 || initial_change.new_slope == ALL_DOWN_SLOPE)
-		{
-			initial_change.new_pos.z--;
-		}
 		FOR(minivec_tpl<grund_t*>, const& other, neighbours_to_change) 
 		{
 			const slope_t::type old_slope_initial = gr->get_grund_hang();
@@ -1342,27 +1335,144 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 			const sint16 old_hgt_initial = gr->get_hoehe();
 			const sint16 new_hgt_initial = initial_change.new_pos.z;
 			const sint16 old_hgt_other = other->get_hoehe();
+			sint16 new_hgt_other = old_hgt_other;
 
 			koord3d new_pos_other = other->get_pos();
 
 			const koord k_initial = gr->get_pos().get_2d();
 			const koord k_other = other->get_pos().get_2d();
 
+			const sint16 old_hdiff = old_hgt_other - old_hgt_initial;
 
-			if(new_hgt_initial > old_hgt_initial)
+			fprintf(stderr,"--------\n");
+			switch(slopediff.hdiff)
 			{
-				if(old_slope_other == slope_t::flat)
-				{
-					new_slope_other = slope_type(k_initial - k_other);
-				}
+				case -1:
+					assert(new_slope_initial == slope_t::flat);
+					switch(old_hdiff)
+					{
+						case -2:
+							assert(slope_t::is_doubles(old_slope_other));
+							new_slope_other = old_slope_other / 2;
+							break;
+						case -1:
+							assert(slope_t::is_single(old_slope_other));
+							new_slope_other = slope_t::flat;
+							break;
+						case 0:
+							if(old_slope_other == slope_t::flat)
+							{
+								new_slope_other = slope_t::opposite(slope_type(k_initial - k_other));
+							}
+							else if(slope_t::is_doubles(old_slope_other))
+							{
+								return NOTICE_TILE_FULL;
+							}
+							else
+							{
+								new_slope_other = old_slope_other * 2;
+							}
+							new_hgt_other = new_hgt_initial;
+							break;
+						case 1:
+							assert(slope_t::is_single(old_slope_other));
+							new_slope_other = slope_t::flat;
+							break;
+						default:
+							return NOTICE_TILE_FULL;
+					} break;
+
+				case 0:
+					assert(old_slope_initial != slope_t::flat || new_slope_initial != slope_t::flat);
+					switch(old_hdiff)
+					{
+						case -1:
+							assert(slope_t::is_single(old_slope_other) && !slope_t::is_doubles(old_slope_other));
+							if(slope_t::is_single(new_slope_initial) && !slope_t::is_doubles(new_slope_initial))
+							{
+								new_slope_other = old_slope_other * 2;
+							}
+							else
+							{
+								return NOTICE_TILE_FULL;
+							}
+							break;
+						case 0:
+							if(new_slope_initial == slope_t::flat)
+							{
+								assert(old_slope_other != slope_t::flat);
+								new_slope_other = slope_t::flat;
+							}
+							else if(old_slope_initial == slope_t::flat)
+							{
+								if(old_slope_other == slope_t::flat)
+								{
+									new_slope_other = slope_t::opposite(new_slope_initial);
+								}
+								else if(slope_t::is_doubles(new_slope_initial))
+								{
+									if(slope_t::is_doubles(old_slope_other))
+									{
+										new_slope_other = slope_t::flat;
+										new_hgt_other = old_hgt_other + 2;
+									}
+									else
+									{
+										assert(slope_t::is_single(old_slope_other));
+										new_slope_other = old_slope_other / 2;
+										new_hgt_other = old_hgt_other + 1;
+									}
+								}
+								else
+								{
+									assert(slope_t::is_single(new_slope_));
+								}
+							}
+							break;
+						case 1:
+							break;
+						case 2:
+							break;
+						default: return NOTICE_TILE_FULL;
+					} break;
+
+				case 1:
+					assert(new_slope_initial == slope_t::flat);
+					switch(old_hdiff)
+					{
+						case -1:
+							new_slope_other = old_slope_other * 2;
+							break;
+						case 0:
+							if(old_slope_other == slope_t::flat)
+							{
+								new_slope_other = slope_type(k_initial - k_other);
+							}
+							else if(slope_t::is_doubles(old_slope_other))
+							{
+								new_slope_other = old_slope_other / 2;
+								new_hgt_other = old_hgt_other + 1;
+							}
+							else if(slope_t::is_single(old_slope_other))
+							{
+								new_slope_other = slope_t::flat;
+								new_hgt_other = old_hgt_other + 1;
+							}
+							else 
+							{
+								return NOTICE_TILE_FULL;
+							}
+							break;
+						case 1:
+							new_slope_other = old_slope_other * 2;
+							break;
+						default: return NOTICE_TILE_FULL;
+					} break;
+				
+				default: return NOTICE_TILE_FULL;
 			}
-			else if(new_hgt_initial < old_hgt_initial)
-			{
-				if(old_slope_other == slope_t::flat)
-				{
-					new_slope_other = slope_type(k_other - k_initial);
-				}
-			}
+
+			new_pos_other.z = new_hgt_other;
 
 			const char *err = precheck_set_slope(other, player, other->get_pos(), new_slope);
 			if(err != NULL) {

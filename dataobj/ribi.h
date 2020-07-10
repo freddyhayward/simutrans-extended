@@ -35,6 +35,12 @@ public:
 
 	typedef sint8 type;
 
+	typedef struct slopediff_t 
+	{
+		type slope;
+		sint8 hdiff;
+	} slopediff_t;
+
 	/*
 	* Macros to access the height of the 4 corners:
 	* Each corner has height 0,1,2.
@@ -90,6 +96,44 @@ public:
 	* @returns 1 for single upwards and 2 for double upwards
 	*/
 	static sint16 get_sloping_upwards(const type slope, const sint16 relative_pos_x, const sint16 relative_pos_y);
+
+	static slopediff_t applied_way_slope_command(const type slope, const type command)
+	{
+		sint8 hgt = 0;
+		type new_slope = slope;
+		if(command == ALL_UP_SLOPE)
+		{
+			hgt = 1;
+			if(is_doubles(slope))
+			{
+				new_slope = slope/2;	
+			}
+			else
+			{
+				new_slope = flat;
+			}
+		}
+		else if(command == ALL_DOWN_SLOPE)
+		{
+			if(is_doubles(slope))
+			{
+				new_slope = slope/2;
+			}
+			else if(is_single(slope))
+			{
+				new_slope = flat;
+			}
+			else if(slope == flat)
+			{
+				hgt = -1;
+				new_slope = flat;
+			}
+		}
+
+		slopediff_t slopediff = {new_slope, hgt};
+		return slopediff;
+
+	}
 
 	static type applied_way_slope(const type slope, const type command)
 	{
