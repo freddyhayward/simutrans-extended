@@ -1344,7 +1344,6 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 
 			const sint16 old_hdiff = old_hgt_other - old_hgt_initial;
 
-			fprintf(stderr,"--------\n");
 			switch(slopediff.hdiff)
 			{
 				case -1:
@@ -1474,7 +1473,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 
 			new_pos_other.z = new_hgt_other;
 
-			const char *err = precheck_set_slope(other, player, other->get_pos(), new_slope);
+			const char *err = precheck_set_slope(other, player, other->get_pos(), new_slope_other);
 			if(err != NULL) {
 				return err;
 			}
