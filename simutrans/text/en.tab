@@ -5808,3 +5808,7 @@ Loading (%i->%i%%) Long Time
 Loading (%i->%i%%) (long wait)
 Vehicle %s wait loading too much!
 Vehicle %s has been loading for a long time.
+emergency_no_route_depot_convoi_%s_teleport
+Convoy %s was towed to the depot because it could not find its own route!
+emergency_no_depot_convoi_%s_sell
+Convoy %s was sold because there was no depot to which to send!

@@ -8092,7 +8092,7 @@ void convoi_t::emergency_go_to_depot(bool show_success)
 #endif
 			if (show_success)
 			{
-				buf.printf(translator::translate("No route to depot for convoy %s: teleported to depot!"), get_name());
+				buf.printf(translator::translate("emergency_no_route_depot_convoi_%s_teleport"), get_name());
 				const vehicle_t* v = front();
 
 				welt->get_message()->add_message(buf, v->get_pos().get_2d(), message_t::warnings, PLAYER_FLAG | get_owner()->get_player_nr(), IMG_EMPTY);
@@ -8116,7 +8116,7 @@ void convoi_t::emergency_go_to_depot(bool show_success)
 #ifdef MULTI_THREAD
 			pthread_mutex_lock(&step_convois_mutex);
 #endif
-			buf.printf( translator::translate("No route and no depot for convoy %s: convoy has been sold!"), get_name() );
+			buf.printf( translator::translate("emergency_no_depot_convoi_%s_sell"), get_name() );
 			const vehicle_t* v = front();
 			welt->get_message()->add_message(buf, v->get_pos().get_2d(),message_t::warnings, PLAYER_FLAG|get_owner()->get_player_nr(), IMG_EMPTY);
 
