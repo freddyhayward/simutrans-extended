@@ -18,17 +18,17 @@ class ribi_t;
 class slope_t {
 private:
     uint8 value;
-    static constexpr uint8 max_cnr_hgt = 2;
-    static constexpr uint8 num_cnr_hgts = max_cnr_hgt + 1;
+    static constexpr uint8 MAX_CNR_HGT = 2;
+    static constexpr uint8 NUM_CNR_HGTS = MAX_CNR_HGT + 1;
     enum special : uint8 {
         flat = 0,
 
         sw = 1, se = 3, ne = 9, nw = 27,
 
-        n = se + sw,
-        s = nw + ne,
-        e = nw + sw,
-        w = ne + se,
+        n = sw + se,
+        s = ne + nw,
+        e = sw + nw,
+        w = se + ne,
 
         all_up_one = sw + se + ne + nw,
         all_up_two = all_up_one * 2,
@@ -38,21 +38,39 @@ private:
     };
 public:
     slope_t() : value(flat) {};
-    explicit slope_t(uint8 _v) : value(_v) {assert(value <= max_number);} //TODO: maybe remove asserts
-    slope_t(uint8 _nw, uint8 _ne, uint8 _se, uint8 _sw) : slope_t(_nw*nw + _ne*ne + _se*se + _sw*sw) {assert(_nw <= max_cnr_hgt && _ne <= max_cnr_hgt && _se <= max_cnr_hgt && _sw <= max_cnr_hgt);} //TODO: maybe remove asserts
+    explicit constexpr slope_t(uint8 _v) : value(_v) {};
+    constexpr slope_t(uint8 _sw, uint8 _se, uint8 _ne, uint8 _nw) : slope_t(_sw*sw + _se*se + _ne*ne + _nw*nw) {};
 
     constexpr bool is_flat() const {return value == flat;} //TODO: remove once value can be sufficiently accessed through other methods.
 
-    constexpr uint8 cnr_hgt(uint8 c) const {return value / c % num_cnr_hgts;} //TODO: remove once value can be sufficiently accessed through other methods.
-    constexpr bool any_eq(uint8 hgt) const {return cnr_hgt(nw) == hgt || cnr_hgt(ne) == hgt || cnr_hgt(se) == hgt || cnr_hgt(sw) == hgt;}
+    constexpr uint8 cnr_hgt(uint8 c) const {return value / c % NUM_CNR_HGTS;} //TODO: remove once value can be sufficiently accessed through other methods.
 
-    constexpr bool allows_way_ns() const {return cnr_hgt(ne) == cnr_hgt(nw) && cnr_hgt(se) == cnr_hgt(sw);} //TODO: use generalised function with ribi_t::ribi as argument
-    constexpr bool allows_way_ew() const {return cnr_hgt(ne) == cnr_hgt(se) && cnr_hgt(nw) == cnr_hgt(sw);} //TODO: use generalised function with ribi_t::ribi as argument
-    constexpr bool allows_junction() const {return allows_way_ew() && allows_way_ew();}
+    constexpr bool any_eq(uint8 hgt) const {return cnr_hgt(sw) == hgt || cnr_hgt(se) == hgt || cnr_hgt(ne) == hgt || cnr_hgt(nw) == hgt;}
 
-    constexpr bool is_single() const {return (allows_way_ew() || allows_way_ns()) && !allows_junction();}
+    constexpr bool allows_way_ns() const {return cnr_hgt(ne) == cnr_hgt(nw) && cnr_hgt(sw) == cnr_hgt(se);} //TODO: use generalised function with ribi_t::ribi as argument
+    constexpr bool allows_way_ew() const {return cnr_hgt(se) == cnr_hgt(ne) && cnr_hgt(sw) == cnr_hgt(nw);} //TODO: use generalised function with ribi_t::ribi as argument
+    constexpr bool allows_way() const {return allows_way_ns() || allows_way_ew();}
+    constexpr bool allows_junction() const {return allows_way_ns() && allows_way_ew();}
 
-    constexpr bool is_doubles() const {return any_eq(2);}
+    constexpr bool is_single() const {return allows_way() && !allows_junction();}
+
+    constexpr bool is_all_up() const {return !any_eq(0);}
+    constexpr bool is_two_high() const {return any_eq(2);}
+    constexpr bool is_one_high() const {return any_eq(1);}
+
+    constexpr uint8 max_cnr_hgt() const {return any_eq(2) ? 2 : (any_eq(1) ? 1 : 0);}
+    constexpr uint8 min_cnr_hgt() const {return any_eq(0) ? 0 : (any_eq(1) ? 1 : 2);}
+
+    constexpr uint8 max_diff() const {return max_cnr_hgt() - min_cnr_hgt();}
+
+    constexpr uint8 cnr_diff(uint8 c, slope_t other) const {return other.cnr_hgt(c) > cnr_hgt(c) ? other.cnr_hgt(c) - cnr_hgt(c) : cnr_hgt(c) - other.cnr_hgt(c);}
+
+    constexpr slope_t diff(slope_t other) const {return {cnr_diff(sw, other), cnr_diff(se, other), cnr_diff(ne, other), cnr_diff(nw, other)};}
+    constexpr slope_t opposite() const {return is_single() ? (diff(slope_t(max_cnr_hgt(), max_cnr_hgt(), max_cnr_hgt(), max_cnr_hgt()))) : slope_t();}
+
+    static uint8 min_diff(slope_t high, slope_t low) {return high.diff(low).min_cnr_hgt();}
+
+    constexpr slope_t rotate90() const {return {cnr_hgt(se), cnr_hgt(ne), cnr_hgt(nw), cnr_hgt(sw)};}
 
     uint8 get_value() const {return value;} //TODO: remove once value can be sufficiently accessed through other methods.
 };
@@ -113,10 +131,10 @@ public:
 
 #define encode_corners(sw, se, ne, nw) ( (sw) * old_slope_t::southwest + (se) * old_slope_t::southeast + (ne) * old_slope_t::northeast + (nw) * old_slope_t::northwest )
 
-#define is_one_high(i)   (i & 7)  // quick method to know whether a slope is one high - relies on two high slopes being divisible by 8 -> i&7=0 (only works for slopes with flag single)
+#define is_one_high_old(i)   (i & 7)  // quick method to know whether a slope is one high - relies on two high slopes being divisible by 8 -> i&7=0 (only works for slopes with flag single)
 
 	/// Compute the slope opposite to @p x. Returns flat if @p x does not allow ways on it.
-	static type opposite(type x) { return is_single(x) ? (is_one_high(x) ? (old_slope_t::all_up_one - x) : (old_slope_t::all_up_two - x)) : flat; }
+	static type opposite(type x) { return is_single(x) ? (is_one_high_old(x) ? (old_slope_t::all_up_one - x) : (old_slope_t::all_up_two - x)) : flat; }
 	/// Rotate.
 	static type rotate90(type x) { return (((x % old_slope_t::southeast) * old_slope_t::northwest ) + ((x - (x % old_slope_t::southeast) ) / old_slope_t::southeast ) ); }
 	/// Returns true if @p x has all corners raised.

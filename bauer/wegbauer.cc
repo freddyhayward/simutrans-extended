@@ -511,8 +511,8 @@ bool way_builder_t::check_slope( const grund_t *from, const grund_t *to )
 	const koord zv=to_pos-from_pos;
 
 	if(  !desc->has_double_slopes()
-		&&  (    (from->get_weg_hang()  &&  !is_one_high(from->get_weg_hang()))
-		      ||   (to->get_weg_hang()  &&    !is_one_high(to->get_weg_hang()))  )  ) {
+		&&  (    (from->get_weg_hang()  &&  !is_one_high_old(from->get_weg_hang()))
+		      ||   (to->get_weg_hang()  &&    !is_one_high_old(to->get_weg_hang()))  )  ) {
 		return false;
 	}
 

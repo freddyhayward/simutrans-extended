@@ -1370,7 +1370,7 @@ old_slope_t::type grund_t::get_disp_way_slope() const
 			const old_slope_t::type slope = get_grund_hang();
 			if(  slope != 0  ) {
 				// all corners to same height
-				return is_one_high(slope) ? old_slope_t::all_up_one : old_slope_t::all_up_two;
+				return is_one_high_old(slope) ? old_slope_t::all_up_one : old_slope_t::all_up_two;
 			}
 			else {
 				return get_weg_hang();
