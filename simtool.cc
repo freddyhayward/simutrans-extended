@@ -1203,10 +1203,6 @@ const char *tool_restoreslope_t::check_pos( player_t *, koord3d pos)
 
 const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos, int new_slope )
 {
-    ;
-    slope_t a = slope_t((uint8)new_slope);
-    bool b = a.is_flat();
-    ;
 	if(  !ground_desc_t::double_grounds  ) {
 		// translate old single slope parameter to new double slope
 		if(  0 < new_slope  &&  new_slope < ALL_UP_SLOPE_SINGLE  ) {

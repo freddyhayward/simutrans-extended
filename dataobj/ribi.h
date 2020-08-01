@@ -18,14 +18,12 @@ class ribi_t;
 class slope_t {
 private:
     uint8 value;
-    static const uint8 max_corner_hgt = 2;
+    static constexpr uint8 max_cnr_hgt = 2;
+    static constexpr uint8 num_cnr_hgts = max_cnr_hgt + 1;
     enum special : uint8 {
         flat = 0,
 
-        nw = 27,
-        ne = 9,
-        se = 3,
-        sw = 1,
+        sw = 1, se = 3, ne = 9, nw = 27,
 
         n = se + sw,
         s = nw + ne,
@@ -40,9 +38,23 @@ private:
     };
 public:
     slope_t() : value(flat) {};
-    explicit slope_t(uint8 _v) : value(_v) {} //{assert(value <= max_number);}
-    slope_t(uint8 _nw, uint8 _ne, uint8 _se, uint8 _sw) : slope_t(_nw*nw + _ne*ne + _se*se + _sw*sw) {} //{assert(_nw <= max_corner_hgt && _ne <= max_corner_hgt && _se <= max_corner_hgt && _sw <= max_corner_hgt);}
-    bool is_flat() const {return value == flat;}
+    explicit slope_t(uint8 _v) : value(_v) {assert(value <= max_number);} //TODO: maybe remove asserts
+    slope_t(uint8 _nw, uint8 _ne, uint8 _se, uint8 _sw) : slope_t(_nw*nw + _ne*ne + _se*se + _sw*sw) {assert(_nw <= max_cnr_hgt && _ne <= max_cnr_hgt && _se <= max_cnr_hgt && _sw <= max_cnr_hgt);} //TODO: maybe remove asserts
+
+    constexpr bool is_flat() const {return value == flat;} //TODO: remove once value can be sufficiently accessed through other methods.
+
+    constexpr uint8 cnr_hgt(uint8 c) const {return value / c % num_cnr_hgts;} //TODO: remove once value can be sufficiently accessed through other methods.
+    constexpr bool any_eq(uint8 hgt) const {return cnr_hgt(nw) == hgt || cnr_hgt(ne) == hgt || cnr_hgt(se) == hgt || cnr_hgt(sw) == hgt;}
+
+    constexpr bool allows_way_ns() const {return cnr_hgt(ne) == cnr_hgt(nw) && cnr_hgt(se) == cnr_hgt(sw);} //TODO: use generalised function with ribi_t::ribi as argument
+    constexpr bool allows_way_ew() const {return cnr_hgt(ne) == cnr_hgt(se) && cnr_hgt(nw) == cnr_hgt(sw);} //TODO: use generalised function with ribi_t::ribi as argument
+    constexpr bool allows_junction() const {return allows_way_ew() && allows_way_ew();}
+
+    constexpr bool is_single() const {return (allows_way_ew() || allows_way_ns()) && !allows_junction();}
+
+    constexpr bool is_doubles() const {return any_eq(2);}
+
+    uint8 get_value() const {return value;} //TODO: remove once value can be sufficiently accessed through other methods.
 };
 
 /**
