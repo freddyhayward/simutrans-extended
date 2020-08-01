@@ -140,7 +140,7 @@ public:
 		return imglist->get_image_id( ribi );
 	}
 
-	image_id get_slope_image_id(slope_t::type slope, uint8 season, bool front = false) const
+	image_id get_slope_image_id(old_slope_t::type slope, uint8 season, bool front = false) const
 	{
 		if (front  &&  !front_images) {
 			return IMG_EMPTY;
@@ -148,28 +148,28 @@ public:
 		int const n = image_list_base_index(season, front) + 1;
 		int nr;
 		switch(slope) {
-			case slope_t::north:
+			case old_slope_t::north:
 				nr = 0;
 				break;
-			case slope_t::west:
+			case old_slope_t::west:
 				nr = 1;
 				break;
-			case slope_t::east:
+			case old_slope_t::east:
 				nr = 2;
 				break;
-			case slope_t::south:
+			case old_slope_t::south:
 				nr = 3;
 				break;
-			case slope_t::north*2:
+			case old_slope_t::north * 2:
 				nr = 4;
 				break;
-			case slope_t::west*2:
+			case old_slope_t::west * 2:
 				nr = 5;
 				break;
-			case slope_t::east*2:
+			case old_slope_t::east * 2:
 				nr = 6;
 				break;
-			case slope_t::south*2:
+			case old_slope_t::south * 2:
 				nr = 7;
 				break;
 			default:

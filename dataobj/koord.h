@@ -28,7 +28,7 @@ public:
 	koord(short xp, short yp) : x(xp), y(yp) {}
 	koord(loadsave_t* file);
 	koord(ribi_t::ribi ribi) { *this = from_ribi[ribi]; }
-	koord(slope_t::type hang)  { *this = from_hang[hang]; }
+	koord(old_slope_t::type hang)  { *this = from_hang[hang]; }
 
 	// use this instead of koord(simrand(x),simrand(y)) to avoid
 	// different order on different compilers

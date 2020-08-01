@@ -26,7 +26,7 @@ protected:
 
 public:
 	fundament_t(loadsave_t *file, koord pos );
-	fundament_t(koord3d pos,slope_t::type hang, bool build_up = true);
+	fundament_t(koord3d pos, old_slope_t::type hang, bool build_up = true);
 
 	/**
 	* The foundation is called 'Fundament'.
@@ -37,7 +37,7 @@ public:
 
 	typ get_typ() const { return fundament; }
 
-	bool set_slope(slope_t::type) { slope = 0; return false; }
+	bool set_slope(old_slope_t::type) { slope = 0; return false; }
 };
 
 #endif

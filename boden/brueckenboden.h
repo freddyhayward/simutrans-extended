@@ -28,7 +28,7 @@ public:
 
 	virtual sint8 get_weg_yoff() const OVERRIDE;
 
-	slope_t::type get_weg_hang() const OVERRIDE { return weg_hang; }
+	old_slope_t::type get_weg_hang() const OVERRIDE { return weg_hang; }
 
 	const char *get_name() const OVERRIDE {return "Brueckenboden";}
 	typ get_typ() const OVERRIDE { return brueckenboden; }

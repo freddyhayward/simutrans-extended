@@ -51,7 +51,7 @@ void wasser_t::calc_image_internal(const bool calc_only_snowline_change)
 		koord pos2d(get_pos().get_2d());
 		sint16 height = welt->get_water_hgt(pos2d);
 		set_hoehe(height);
-		slope = slope_t::flat;
+		slope = old_slope_t::flat;
 
 		sint16 zpos = min(welt->lookup_hgt(pos2d), height); // otherwise slope will fail ...
 

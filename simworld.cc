@@ -481,7 +481,7 @@ void karte_t::cleanup_grounds_loop( sint16 x_min, sint16 x_max, sint16 y_min, si
 			planquadrat_t *pl = access_nocheck(x,y);
 			grund_t *gr = pl->get_kartenboden();
 			koord k(x,y);
-			slope_t::type slope = calc_natural_slope(k);
+			old_slope_t::type slope = calc_natural_slope(k);
 			sint8 height = min_hgt_nocheck(k);
 			sint8 water_hgt = get_water_hgt_nocheck(k);
 
@@ -1402,7 +1402,7 @@ DBG_DEBUG("karte_t::distribute_groundobjs_cities()","distributing movingobjs");
 			for(k.x=(k.y<old_y)?old_x:1; k.x<get_size().x-1; k.x++) {
 				grund_t *gr = lookup_kartenboden_nocheck(k);
 				// flat ground or open water
-				if (gr->get_top() == 0 && ((gr->get_typ() == grund_t::boden  &&  gr->get_grund_hang() == slope_t::flat) || (has_water  &&  gr->is_water()))) {
+				if (gr->get_top() == 0 && ((gr->get_typ() == grund_t::boden  && gr->get_grund_hang() == old_slope_t::flat) || (has_water && gr->is_water()))) {
 					queried --;
 					if(  queried<0  ) {
 						const groundobj_desc_t *desc = movingobj_t::random_movingobj_for_climate( get_climate(k) );
@@ -3291,7 +3291,7 @@ const char* karte_t::can_lower_plan_to(const player_t *player, sint16 x, sint16 
 	if(  !gr  && settings.get_way_height_clearance()==2  ) {
 		gr = plan->get_boden_in_hoehe( h - 3 );
 	}
-	if (gr  &&  h < gr->get_pos().z + slope_t::max_diff(gr->get_weg_hang()) + settings.get_way_height_clearance()) {
+	if (gr  &&  h < gr->get_pos().z + old_slope_t::max_diff(gr->get_weg_hang()) + settings.get_way_height_clearance()) {
 		return "";
 	}
 
@@ -3602,7 +3602,7 @@ int karte_t::raise_to(sint16 x, sint16 y, sint8 hsw, sint8 hse, sint8 hne, sint8
 	const sint8 disp_hn_se = max( hn_se, water_hgt );
 	const sint8 disp_hn_ne = max( hn_ne, water_hgt );
 	const sint8 disp_hn_nw = max( hn_nw, water_hgt );
-	const slope_t::type sneu = encode_corners(disp_hn_sw - disp_hneu, disp_hn_se - disp_hneu, disp_hn_ne - disp_hneu, disp_hn_nw - disp_hneu);
+	const old_slope_t::type sneu = encode_corners(disp_hn_sw - disp_hneu, disp_hn_se - disp_hneu, disp_hn_ne - disp_hneu, disp_hn_nw - disp_hneu);
 
 	bool ok = (hmaxneu - hneu <= max_hdiff); // may fail on water tiles since lookup_hgt might be modified from previous raise_to calls
 	if (!ok && !gr->is_water()) {
@@ -3676,7 +3676,7 @@ int karte_t::grid_raise(const player_t *player, koord k, bool allow_deep_water, 
 	if(is_within_grid_limits(k)) {
 
 		const grund_t *gr = lookup_kartenboden_gridcoords(k);
-		const slope_t::type corner_to_raise = get_corner_to_operate(k);
+		const old_slope_t::type corner_to_raise = get_corner_to_operate(k);
 
 		const sint16 x = gr->get_pos().x;
 		const sint16 y = gr->get_pos().y;
@@ -3913,12 +3913,12 @@ int karte_t::lower_to(sint16 x, sint16 y, sint8 hsw, sint8 hse, sint8 hne, sint8
 	const sint8 disp_hn_se = max( hn_se, water_hgt );
 	const sint8 disp_hn_ne = max( hn_ne, water_hgt );
 	const sint8 disp_hn_nw = max( hn_nw, water_hgt );
-	const slope_t::type sneu = encode_corners(disp_hn_sw - disp_hneu, disp_hn_se - disp_hneu, disp_hn_ne - disp_hneu, disp_hn_nw - disp_hneu);
+	const old_slope_t::type sneu = encode_corners(disp_hn_sw - disp_hneu, disp_hn_se - disp_hneu, disp_hn_ne - disp_hneu, disp_hn_nw - disp_hneu);
 
 	// change height and slope for land tiles only
 	if(  !gr->is_water()  ||  (hmaxneu > water_hgt)  ) {
 		gr->set_pos( koord3d( x, y, disp_hneu ) );
-		gr->set_grund_hang( (slope_t::type)sneu );
+		gr->set_grund_hang( (old_slope_t::type)sneu );
 		access_nocheck(x,y)->abgesenkt();
 	}
 	// update north point in grid
@@ -4012,7 +4012,7 @@ int karte_t::grid_lower(const player_t *player, koord k, const char*&err)
 	if(is_within_grid_limits(k)) {
 
 		const grund_t *gr = lookup_kartenboden_gridcoords(k);
-		const slope_t::type corner_to_lower = get_corner_to_operate(k);
+		const old_slope_t::type corner_to_lower = get_corner_to_operate(k);
 
 		const sint16 x = gr->get_pos().x;
 		const sint16 y = gr->get_pos().y;
@@ -4060,9 +4060,9 @@ bool karte_t::flatten_tile(player_t *player, koord k, sint8 hgt, bool keep_water
 	int n = 0;
 	bool ok = true;
 	const grund_t *gr = lookup_kartenboden(k);
-	const slope_t::type slope = gr->get_grund_hang();
+	const old_slope_t::type slope = gr->get_grund_hang();
 	const sint8 old_hgt = make_underwater_hill  &&  gr->is_water() ? min_hgt(k) : gr->get_hoehe();
-	const sint8 max_hgt = old_hgt + slope_t::max_diff(slope);
+	const sint8 max_hgt = old_hgt + old_slope_t::max_diff(slope);
 	if(  max_hgt > hgt  ) {
 
 		terraformer_t digger(this);
@@ -7919,7 +7919,7 @@ uint8 karte_t::recalc_natural_slope( const koord k, sint8 &new_height ) const
 {
 	grund_t *gr = lookup_kartenboden(k);
 	if(!gr) {
-		return slope_t::flat;
+		return old_slope_t::flat;
 	}
 	else {
 		const sint8 max_hdiff = ground_desc_t::double_grounds ? 2 : 1;
@@ -8069,8 +8069,8 @@ bool karte_t::square_is_free(koord k, sint16 w, sint16 h, int *last_y, climate_b
 			}
 
 			// we can built, if: max height all the same, everything removable and no buildings there
-			slope_t::type slope = gr->get_grund_hang();
-			sint8 max_height = gr->get_hoehe() + slope_t::max_diff(slope);
+			old_slope_t::type slope = gr->get_grund_hang();
+			sint8 max_height = gr->get_hoehe() + old_slope_t::max_diff(slope);
 
 			climate test_climate = get_climate(k_check);
 			if(  cl & (1 << water_climate)  &&  test_climate != water_climate  )
@@ -8090,7 +8090,7 @@ bool karte_t::square_is_free(koord k, sint16 w, sint16 h, int *last_y, climate_b
 			}
 			if(  platz_h != max_height  ||  !gr->ist_natur()  ||  gr->kann_alle_obj_entfernen(NULL) != NULL  ||
 			     (cl & (1 << test_climate)) == 0  ||  ( slope && (lookup( gr->get_pos()+koord3d(0,0,1) ) ||
-			     (slope_t::max_diff(slope)==2 && lookup( gr->get_pos()+koord3d(0,0,2) )) ))  )
+			     (old_slope_t::max_diff(slope) == 2 && lookup(gr->get_pos() + koord3d(0, 0, 2) )) ))  )
 			{
 				if(  last_y  )
 				{
@@ -9308,7 +9308,7 @@ DBG_MESSAGE("karte_t::load()", "init player");
 				grund_t *gr = access_nocheck(x, y)->get_kartenboden();
 				if(  gr->get_typ()==grund_t::fundament  ) {
 					gr->set_hoehe( max_hgt_nocheck(k) );
-					gr->set_grund_hang( slope_t::flat );
+					gr->set_grund_hang(old_slope_t::flat );
 					// transfer object to on new grund
 					for(  int i=0;  i<gr->get_top();  i++  ) {
 						gr->obj_bei(i)->set_pos( gr->get_pos() );
@@ -9953,10 +9953,10 @@ void karte_t::get_neighbour_heights(const koord k, sint8 neighbour_height[8][4])
 		planquadrat_t *pl2 = access( k + koord::neighbours[i] );
 		if(  pl2  ) {
 			grund_t *gr2 = pl2->get_kartenboden();
-			slope_t::type slope_corner = gr2->get_grund_hang();
+			old_slope_t::type slope_corner = gr2->get_grund_hang();
 			for(  int j = 0;  j < 4;  j++  ) {
 				neighbour_height[i][j] = gr2->get_hoehe() + corner_sw(slope_corner);
-				slope_corner /= slope_t::southeast;
+				slope_corner /= old_slope_t::southeast;
 			}
 		}
 		else {
@@ -10071,7 +10071,7 @@ void karte_t::recalc_transitions(koord k)
 		uint8 climate_corners = 0;
 		climate climate0 = get_climate(k);
 
-		slope_t::type slope_corner = gr->get_grund_hang();
+		old_slope_t::type slope_corner = gr->get_grund_hang();
 		for(  uint8 i = 0;  i < 4;  i++  ) { // 0 = sw, 1 = se etc.
 			// corner_sw (i=0): tests vs neighbour 1:w (corner 2 j=1),2:sw (corner 3) and 3:s (corner 4)
 			// corner_se (i=1): tests vs neighbour 3:s (corner 3 j=2),4:se (corner 4) and 5:e (corner 1)
@@ -10093,7 +10093,7 @@ void karte_t::recalc_transitions(koord k)
 			if(  min_climate == water_climate  ||  transition_climate > climate0  ) {
 				climate_corners |= 1 << i;
 			}
-			slope_corner /= slope_t::southeast;
+			slope_corner /= old_slope_t::southeast;
 		}
 		pl->set_climate_transition_flag( climate_corners != 0 );
 		pl->set_climate_corners( climate_corners );

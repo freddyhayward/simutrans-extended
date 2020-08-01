@@ -702,11 +702,11 @@ bool stadt_t::bewerte_loc(const koord pos, const rule_t &regel, int rotation)
 				break;
 			case 'U':
 				// unbuildable for road
-				if (!slope_t::is_way(gr->get_grund_hang())) return false;
+				if (!old_slope_t::is_way(gr->get_grund_hang())) return false;
 				break;
 			case 'u':
 				// road may be buildable
-				if (slope_t::is_way(gr->get_grund_hang())) return false;
+				if (old_slope_t::is_way(gr->get_grund_hang())) return false;
 				break;
 			case 't':
 				// here is a stop/extension building
@@ -1131,7 +1131,7 @@ class monument_placefinder_t : public placefinder_t {
 				}
 			}
 
-			if (gr->get_grund_hang() != slope_t::flat) {
+			if (gr->get_grund_hang() != old_slope_t::flat) {
 				return false;
 			}
 
@@ -1139,7 +1139,7 @@ class monument_placefinder_t : public placefinder_t {
 				sint8 new_hgt;
 				const uint8 new_slope = welt->recalc_natural_slope(gr->get_pos().get_2d(),new_hgt);
 
-				if (new_slope != slope_t::flat) {
+				if (new_slope != old_slope_t::flat) {
 					return false;
 				}
 			}
@@ -1183,7 +1183,7 @@ class townhall_placefinder_t : public placefinder_t {
 		virtual bool is_tile_ok(koord pos, koord d, climate_bits cl, uint16 allowed_regions) const
 		{
 			const grund_t* gr = welt->lookup_kartenboden(pos + d);
-			if (gr == NULL  ||  gr->get_grund_hang() != slope_t::flat) return false;
+			if (gr == NULL  || gr->get_grund_hang() != old_slope_t::flat) return false;
 
 			if(  ((1 << welt->get_climate( gr->get_pos().get_2d() )) & cl) == 0  ) {
 				return false;
@@ -3742,7 +3742,7 @@ void stadt_t::check_bau_townhall(bool new_town)
 						const koord pos = pos_alt + k;
 						gr = welt->lookup_kartenboden(pos);
 						if (gr  &&  gr->ist_natur() &&  gr->kann_alle_obj_entfernen(NULL) == NULL  &&
-							  (  gr->get_grund_hang() == slope_t::flat  ||  welt->lookup(koord3d(k, welt->max_hgt(k))) == NULL  ) ) {
+							  (gr->get_grund_hang() == old_slope_t::flat || welt->lookup(koord3d(k, welt->max_hgt(k))) == NULL  ) ) {
 							DBG_MESSAGE("stadt_t::check_bau_townhall()", "fill empty spot at (%s)", pos.get_str());
 							build_city_building(pos, new_town, false);
 						}
@@ -3756,7 +3756,7 @@ void stadt_t::check_bau_townhall(bool new_town)
 						gr = welt->lookup_kartenboden(best_pos + k);
 						if(  gr  &&  gr->ist_natur()  ) {
 							// make flat and use right height
-							gr->set_grund_hang(slope_t::flat);
+							gr->set_grund_hang(old_slope_t::flat);
 							gr->set_pos( koord3d( best_pos + k, old_z ) );
 						}
 					}
@@ -4094,7 +4094,7 @@ int stadt_t::get_best_layout(const building_desc_t* h, const koord & k) const {
 			// We found a road... (yes, it is OK to face a road with a different hang)
 			// update directions (SENW)
 			streetdirs += (1 << i);
-			if (gr->get_weg_hang() == slope_t::flat) {
+			if (gr->get_weg_hang() == old_slope_t::flat) {
 				// Will get flat bridge ends as well as flat ground
 				flat_streetdirs += (1 << i);
 			}
@@ -4355,8 +4355,8 @@ void stadt_t::get_available_building_size(const koord k, vector_tpl<koord> &size
 					}
 					// the tile must be in the same height as others.
 					sint8 tile_height;
-					const slope_t::type hang = welt->recalc_natural_slope(p, tile_height);
-					if(hang!=slope_t::flat) {
+					const old_slope_t::type hang = welt->recalc_natural_slope(p, tile_height);
+					if(hang != old_slope_t::flat) {
 						tile_height ++;
 					}
 					if(height!=-100  &&  height!=tile_height) {
@@ -4410,7 +4410,7 @@ void stadt_t::build_city_building(const koord k, bool new_town, bool map_generat
 		}
 	}
 	// Refuse to build on a slope, when there is a groudn right on top of it (=> the house would sit on the bridge then!)
-	if(  gr->get_grund_hang() != slope_t::flat  &&  welt->lookup(koord3d(k, welt->max_hgt(k))) != NULL  ) {
+	if(gr->get_grund_hang() != old_slope_t::flat && welt->lookup(koord3d(k, welt->max_hgt(k))) != NULL  ) {
 		return;
 	}
 
@@ -5142,8 +5142,8 @@ bool stadt_t::build_road(const koord k, player_t* player_, bool forced, bool map
 	}
 
 	// dwachs: If not able to built here, try to make artificial slope
-	slope_t::type slope = bd->get_grund_hang();
-	if (!slope_t::is_way(slope)) {
+	old_slope_t::type slope = bd->get_grund_hang();
+	if (!old_slope_t::is_way(slope)) {
 		climate c = welt->get_climate(k);
 		if (welt->can_flatten_tile(NULL, k, bd->get_hoehe()+1, true)) {
 			welt->flatten_tile(NULL, k, bd->get_hoehe()+1, true);
@@ -5165,7 +5165,7 @@ bool stadt_t::build_road(const koord k, player_t* player_, bool forced, bool map
 	}
 
 	// initially allow all possible directions ...
-	ribi_t::ribi allowed_dir = (bd->get_grund_hang() != slope_t::flat ? ribi_t::doubles(ribi_type(bd->get_weg_hang())) : (ribi_t::ribi)ribi_t::all);
+	ribi_t::ribi allowed_dir = (bd->get_grund_hang() != old_slope_t::flat ? ribi_t::doubles(ribi_type(bd->get_weg_hang())) : (ribi_t::ribi)ribi_t::all);
 
 	// we have here a road: check for four corner stops
 	const gebaeude_t* gb = bd->find<gebaeude_t>();
@@ -5222,8 +5222,8 @@ bool stadt_t::build_road(const koord k, player_t* player_, bool forced, bool map
 					// not the correct slope
 				}
 				else if (bd2->get_typ()==grund_t::brueckenboden
-					&&  (bd2->get_grund_hang()==slope_t::flat  ?  ribi_t::nsew[r]!=ribi_type(bd2->get_weg_hang())
-					                                           :  ribi_t::backward(ribi_t::nsew[r])!=ribi_type(bd2->get_grund_hang()))) {
+					&&  (bd2->get_grund_hang() == old_slope_t::flat ? ribi_t::nsew[r] != ribi_type(bd2->get_weg_hang())
+                                                                    :  ribi_t::backward(ribi_t::nsew[r])!=ribi_type(bd2->get_grund_hang()))) {
 					// not the correct slope
 				}
 				else if(bd2->hat_weg(road_wt)) {
@@ -5368,11 +5368,11 @@ bool stadt_t::build_road(const koord k, player_t* player_, bool forced, bool map
 					end = bridge_builder_t::find_end_pos(NULL, bd->get_pos(), zv, bridge, err, bridge_height, true);
 				}
 				// if the river is nagigable, we need a two hight slope, so we have to start on a flat tile
-				if (err && *err != 0 && strcmp(err, "Bridge is too long for this type!\n") != 0 && bd->get_weg_hang() != slope_t::flat) {
-					slope_t::type old_slope = bd->get_grund_hang();
-					sint8 h_diff = slope_t::max_diff(old_slope);
+				if (err && *err != 0 && strcmp(err, "Bridge is too long for this type!\n") != 0 && bd->get_weg_hang() != old_slope_t::flat) {
+					old_slope_t::type old_slope = bd->get_grund_hang();
+					sint8 h_diff = old_slope_t::max_diff(old_slope);
 					// raise up the tile
-					bd->set_grund_hang(slope_t::flat);
+					bd->set_grund_hang(old_slope_t::flat);
 					bd->set_hoehe(bd->get_hoehe() + h_diff);
 					end = bridge_builder_t::find_end_pos(NULL, bd->get_pos(), zv, bridge, err, bridge_height, false);
 					if (err || koord_distance(k, end.get_2d()) > 3) {

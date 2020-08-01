@@ -72,7 +72,7 @@ bool groundobj_t::register_desc(groundobj_desc_t *desc)
 /* also checks for distribution values
  * @author prissi
  */
-const groundobj_desc_t *groundobj_t::random_groundobj_for_climate(climate_bits cl, slope_t::type slope  )
+const groundobj_desc_t *groundobj_t::random_groundobj_for_climate(climate_bits cl, old_slope_t::type slope  )
 {
 	// none there
 	if(  desc_names.empty()  ) {
@@ -81,7 +81,7 @@ const groundobj_desc_t *groundobj_t::random_groundobj_for_climate(climate_bits c
 
 	int weight = 0;
 	FOR(  vector_tpl<groundobj_desc_t const*>,  const i,  groundobj_typen  ) {
-		if(  i->is_allowed_climate_bits(cl)  &&  (slope == slope_t::flat  ||  (i->get_phases() >= slope  &&  i->get_image_nr(0,slope)!=IMG_EMPTY  )  )  ) {
+		if(  i->is_allowed_climate_bits(cl)  &&  (slope == old_slope_t::flat || (i->get_phases() >= slope && i->get_image_nr(0, slope) != IMG_EMPTY  )  )  ) {
 			weight += i->get_distribution_weight();
 		}
 	}
@@ -91,7 +91,7 @@ const groundobj_desc_t *groundobj_t::random_groundobj_for_climate(climate_bits c
 		const int w=simrand(weight, "const groundobj_desc_t *groundobj_t::random_groundobj_for_climate(climate_bits cl, slope_t::type slope  )");
 		weight = 0;
 		FOR(vector_tpl<groundobj_desc_t const*>, const i, groundobj_typen) {
-			if(  i->is_allowed_climate_bits(cl)  &&  (slope == slope_t::flat  ||  (i->get_phases() >= slope  &&  i->get_image_nr(0,slope)!=IMG_EMPTY  )  )  ) {
+			if(  i->is_allowed_climate_bits(cl)  &&  (slope == old_slope_t::flat || (i->get_phases() >= slope && i->get_image_nr(0, slope) != IMG_EMPTY  )  )  ) {
 				weight += i->get_distribution_weight();
 				if(weight>=w) {
 					return i;

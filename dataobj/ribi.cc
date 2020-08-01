@@ -168,7 +168,7 @@ static const ribi_t::ribi from_hang[81] = {
 };
 
 
-const int slope_t::flags[81] = {
+const int old_slope_t::flags[81] = {
 	way_ns | way_ew,	// slope 0 # flat	straight ns|ew
 	0,	// slope 1 # sw1
 	doubles,	// slope 2 # sw2
@@ -253,23 +253,23 @@ const int slope_t::flags[81] = {
 };
 
 
-const slope_t::type hang_from_ribi[16] = {
-	0,
-	slope_t::north,
-	slope_t::east,
-	0,
-	slope_t::south,
-	0,
-	0,
-	0,
-	slope_t::west,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0
+const old_slope_t::type hang_from_ribi[16] = {
+        0,
+        old_slope_t::north,
+        old_slope_t::east,
+        0,
+        old_slope_t::south,
+        0,
+        0,
+        0,
+        old_slope_t::west,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
 };
 
 
@@ -293,7 +293,7 @@ const ribi_t::dir ribi_t::dirs[16] = {
 };
 
 
-ribi_t::ribi ribi_type(slope_t::type hang)   // north slope -> south, ... !
+ribi_t::ribi ribi_type(old_slope_t::type hang)   // north slope -> south, ... !
 {
 	return from_hang[hang];
 }
@@ -351,7 +351,7 @@ bool ribi_t::is_perpendicular(ribi x, ribi y)
 }
 
 
-sint16 slope_t::get_sloping_upwards(const slope_t::type slope, const sint16 relative_pos_x, const sint16 relative_pos_y)
+sint16 old_slope_t::get_sloping_upwards(const old_slope_t::type slope, const sint16 relative_pos_x, const sint16 relative_pos_y)
 {
 	if (relative_pos_y < 0) {
 		if (slope == north) {
@@ -392,30 +392,30 @@ sint16 slope_t::get_sloping_upwards(const slope_t::type slope, const sint16 rela
 }
 
 
-slope_t::type slope_type(koord dir)
+old_slope_t::type slope_type(koord dir)
 {
 	if (dir.x == 0) {
 		if (dir.y < 0) {		    // north direction -> south slope
-			return slope_t::south;
+			return old_slope_t::south;
 		}
 		if (dir.y > 0) {
-			return slope_t::north;    // south direction -> north slope
+			return old_slope_t::north;    // south direction -> north slope
 		}
 	}
 	if (dir.y == 0) {
 		if (dir.x < 0) {
-			return slope_t::east;	    // west direction -> east slope
+			return old_slope_t::east;	    // west direction -> east slope
 		}
 		if (dir.x > 0) {
-			return slope_t::west;    // east direction -> west slope
+			return old_slope_t::west;    // east direction -> west slope
 		}
 	}
-	return slope_t::flat;	    // ???
+	return old_slope_t::flat;	    // ???
 }
 
 
 
-slope_t::type slope_type(ribi_t::ribi r)
+old_slope_t::type slope_type(ribi_t::ribi r)
 {
 	return hang_from_ribi[r];
 }

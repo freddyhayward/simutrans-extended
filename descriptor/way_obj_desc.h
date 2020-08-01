@@ -57,7 +57,7 @@ public:
 
 	image_id get_back_image_id(ribi_t::ribi ribi) const { return get_child<image_list_t>(3)->get_image_id(ribi); }
 
-	image_id get_front_slope_image_id(slope_t::type slope) const
+	image_id get_front_slope_image_id(old_slope_t::type slope) const
 	{
 		int nr;
 		switch(slope) {
@@ -97,7 +97,7 @@ public:
 		return slope_img;
 	  }
 
-	image_id get_back_slope_image_id(slope_t::type slope) const
+	image_id get_back_slope_image_id(old_slope_t::type slope) const
 	{
 		int nr;
 		switch(slope) {

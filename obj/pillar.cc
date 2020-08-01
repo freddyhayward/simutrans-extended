@@ -57,7 +57,7 @@ void pillar_t::calc_image()
 	int height = get_yoff();
 	if(  desc->has_pillar_asymmetric()  ) {
 		if(  grund_t *gr = welt->lookup(get_pos())  ) {
-			slope_t::type slope = gr->get_grund_hang();
+			old_slope_t::type slope = gr->get_grund_hang();
 			if(  dir == bridge_desc_t::NS_Pillar  ) {
 				height += min( corner_sw(slope), corner_se(slope) ) * TILE_HEIGHT_STEP;
 			}

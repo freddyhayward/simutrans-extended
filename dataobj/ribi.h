@@ -13,11 +13,42 @@
 
 class koord;
 class koord3d;
+class ribi_t;
+
+class slope_t {
+private:
+    uint8 value;
+    static const uint8 max_corner_hgt = 2;
+    enum special : uint8 {
+        flat = 0,
+
+        nw = 27,
+        ne = 9,
+        se = 3,
+        sw = 1,
+
+        n = se + sw,
+        s = nw + ne,
+        e = nw + sw,
+        w = ne + se,
+
+        all_up_one = sw + se + ne + nw,
+        all_up_two = all_up_one * 2,
+
+        raised = all_up_two,
+        max_number = all_up_two,
+    };
+public:
+    slope_t() : value(flat) {};
+    explicit slope_t(uint8 _v) : value(_v) {} //{assert(value <= max_number);}
+    slope_t(uint8 _nw, uint8 _ne, uint8 _se, uint8 _sw) : slope_t(_nw*nw + _ne*ne + _se*se + _sw*sw) {} //{assert(_nw <= max_corner_hgt && _ne <= max_corner_hgt && _se <= max_corner_hgt && _sw <= max_corner_hgt);}
+    bool is_flat() const {return value == flat;}
+};
 
 /**
 * Slopes of tiles.
 */
-class slope_t {
+class old_slope_t {
 
 	/// Static lookup table
 	static const int flags[81];
@@ -47,13 +78,13 @@ public:
 		southeast = 3,  ///< SE corner
 		southwest = 1,  ///< SW corner
 
-		north = slope_t::southeast+slope_t::southwest,	///< North slope
-		west  = slope_t::northeast+slope_t::southeast,  ///< West slope
-		east  = slope_t::northwest+slope_t::southwest,  ///< East slope
-		south = slope_t::northwest+slope_t::northeast,  ///< South slope
+		north = old_slope_t::southeast + old_slope_t::southwest,	///< North slope
+		west  = old_slope_t::northeast + old_slope_t::southeast,  ///< West slope
+		east  = old_slope_t::northwest + old_slope_t::southwest,  ///< East slope
+		south = old_slope_t::northwest + old_slope_t::northeast,  ///< South slope
 
-		all_up_one = slope_t::southwest+slope_t::southeast+slope_t::northeast+slope_t::northwest, ///all corners 1 high
-		all_up_two = slope_t::all_up_one * 2,                                                     ///all corners 2 high
+		all_up_one = old_slope_t::southwest + old_slope_t::southeast + old_slope_t::northeast + old_slope_t::northwest, ///all corners 1 high
+		all_up_two = old_slope_t::all_up_one * 2,                                                     ///all corners 2 high
 
 		raised = all_up_two,    ///< special meaning: used as slope of bridgeheads and in terraforming tools (keep for compatibility)
 
@@ -63,19 +94,19 @@ public:
 	/*
 	 * Macros to access the height of the 4 corners:
 	 */
-#define corner_sw(i)  ((i)%slope_t::southeast)                      // sw corner
-#define corner_se(i) (((i)/slope_t::southeast)%slope_t::southeast)  // se corner
-#define corner_ne(i) (((i)/slope_t::northeast)%slope_t::southeast)  // ne corner
-#define corner_nw(i)  ((i)/slope_t::northwest)                      // nw corner
+#define corner_sw(i)  ((i)%old_slope_t::southeast)                      // sw corner
+#define corner_se(i) (((i)/old_slope_t::southeast)%old_slope_t::southeast)  // se corner
+#define corner_ne(i) (((i)/old_slope_t::northeast)%old_slope_t::southeast)  // ne corner
+#define corner_nw(i)  ((i)/old_slope_t::northwest)                      // nw corner
 
-#define encode_corners(sw, se, ne, nw) ( (sw) * slope_t::southwest + (se) * slope_t::southeast + (ne) * slope_t::northeast + (nw) * slope_t::northwest )
+#define encode_corners(sw, se, ne, nw) ( (sw) * old_slope_t::southwest + (se) * old_slope_t::southeast + (ne) * old_slope_t::northeast + (nw) * old_slope_t::northwest )
 
 #define is_one_high(i)   (i & 7)  // quick method to know whether a slope is one high - relies on two high slopes being divisible by 8 -> i&7=0 (only works for slopes with flag single)
 
 	/// Compute the slope opposite to @p x. Returns flat if @p x does not allow ways on it.
-	static type opposite(type x) { return is_single(x) ? (is_one_high(x) ? (slope_t::all_up_one - x) : (slope_t::all_up_two - x)) : flat; }
+	static type opposite(type x) { return is_single(x) ? (is_one_high(x) ? (old_slope_t::all_up_one - x) : (old_slope_t::all_up_two - x)) : flat; }
 	/// Rotate.
-	static type rotate90(type x) { return ( ( (x % slope_t::southeast) * slope_t::northwest ) + ( ( x - (x % slope_t::southeast) ) / slope_t::southeast ) ); }
+	static type rotate90(type x) { return (((x % old_slope_t::southeast) * old_slope_t::northwest ) + ((x - (x % old_slope_t::southeast) ) / old_slope_t::southeast ) ); }
 	/// Returns true if @p x has all corners raised.
 	static bool is_all_up(type x) { return (flags[x] & all_up)>0; }
 	/// Returns maximal height difference between the corners of this slope.
@@ -245,8 +276,8 @@ public:
 * Calculate directions from slopes.
 * Go upward on the slope: slope_t::north translates to ribi_t::south.
 */
-slope_t::type slope_type(koord dir);
-slope_t::type slope_type(ribi_t::ribi);
+old_slope_t::type slope_type(koord dir);
+old_slope_t::type slope_type(ribi_t::ribi);
 
 /**
 * Calculate direction bit from coordinate differences.
@@ -263,7 +294,7 @@ ribi_t::ribi ribi_type(const koord3d& dir);
 * Calculate direction bit from slope.
 * Note: slope_t::north (slope north) will be translated to ribi_t::south (direction south).
 */
-ribi_t::ribi ribi_type(slope_t::type slope);
+ribi_t::ribi ribi_type(old_slope_t::type slope);
 
 /**
 * Calculate direction bit for travel from @p from to @p to.

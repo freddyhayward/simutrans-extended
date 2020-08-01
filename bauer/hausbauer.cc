@@ -470,7 +470,7 @@ void hausbauer_t::remove( player_t *player, const gebaeude_t *gb, bool map_gener
 						const uint8 new_slope = welt->recalc_natural_slope(newk,new_hgt);
 						// test for ground at new height
 						const grund_t *gr2 = welt->lookup(koord3d(newk,new_hgt));
-						if(  (gr2==NULL  ||  gr2==gr) &&  new_slope!=slope_t::flat  ) {
+						if(  (gr2==NULL  ||  gr2==gr) && new_slope != old_slope_t::flat  ) {
 							// and for ground above new sloped tile
 							gr2 = welt->lookup(koord3d(newk, new_hgt+1));
 						}
@@ -478,10 +478,10 @@ void hausbauer_t::remove( player_t *player, const gebaeude_t *gb, bool map_gener
 						if(  gr2  &&  gr2!=gr  ) {
 							// there is another ground below or above
 							// => do not change height, keep foundation
-							welt->access(newk)->kartenboden_setzen( new boden_t( gr->get_pos(), slope_t::flat ) );
+							welt->access(newk)->kartenboden_setzen( new boden_t(gr->get_pos(), old_slope_t::flat ) );
 							ground_recalc = false;
 						}
-						else if(  new_hgt <= welt->get_water_hgt(newk)  &&  new_slope == slope_t::flat  ) {
+						else if(  new_hgt <= welt->get_water_hgt(newk)  && new_slope == old_slope_t::flat  ) {
 							welt->access(newk)->kartenboden_setzen( new wasser_t( koord3d( newk, new_hgt ) ) );
 							welt->calc_climate( newk, true );
 						}
@@ -568,7 +568,7 @@ gebaeude_t* hausbauer_t::build(player_t* player, koord3d pos, int org_layout, co
 					// delete everything except vehicles
 					gr->obj_loesche_alle(player);
 				}
-				needs_ground_recalc |= gr->get_grund_hang()!=slope_t::flat;
+				needs_ground_recalc |= gr->get_grund_hang() != old_slope_t::flat;
 				// Build fundament up or down?  Up is the default.
 				bool build_up = true;
 				if (dim.x == 1 && dim.y == 1) {
@@ -613,11 +613,11 @@ gebaeude_t* hausbauer_t::build(player_t* player, koord3d pos, int org_layout, co
 					}
 					if(  front_side_neighbor != koord(0,0)  ) {
 						const grund_t* front_gr = welt->lookup_kartenboden(pos.get_2d() + front_side_neighbor);
-						if(  !front_gr || (front_gr->get_weg_hang() != slope_t::flat)  ) {
+						if(  !front_gr || (front_gr->get_weg_hang() != old_slope_t::flat)  ) {
 							// Nothing in front, or sloped.  For a corner building, try the other front side.
 							if(  other_front_side_neighbor != koord(0,0)  ) {
 								const grund_t* other_front_gr = welt->lookup_kartenboden(pos.get_2d() + other_front_side_neighbor);
-								if (other_front_gr && (other_front_gr->get_weg_hang() == slope_t::flat)  ) {
+								if (other_front_gr && (other_front_gr->get_weg_hang() == old_slope_t::flat)  ) {
 									// Prefer the other front side.
 									front_side_neighbor = other_front_side_neighbor;
 									front_gr = other_front_gr;

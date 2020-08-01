@@ -39,7 +39,7 @@ void brueckenboden_t::calc_image_internal(const bool calc_only_snowline_change)
 		if(  !calc_only_snowline_change  ) {
 			grund_t::calc_back_image( get_pos().z, slope );
 			set_flag( draw_as_obj );
-			if(  (get_grund_hang() == slope_t::west  &&  abs(back_imageid) > 11)  ||  (get_grund_hang() == slope_t::north  &&  get_back_image(0) != IMG_EMPTY)  ) {
+			if((get_grund_hang() == old_slope_t::west && abs(back_imageid) > 11) || (get_grund_hang() == old_slope_t::north && get_back_image(0) != IMG_EMPTY)  ) {
 				// must draw as obj, since there is a slop here nearby
 				koord pos = get_pos().get_2d() + koord( get_grund_hang() );
 				grund_t *gr = welt->lookup_kartenboden( pos );
@@ -101,7 +101,7 @@ void brueckenboden_t::rotate90()
 {
 	if( sint8 way_offset = get_weg_yoff() ) {
 		pos.rotate90( welt->get_size().y-1 );
-		slope = slope_t::rotate90( slope );
+		slope = old_slope_t::rotate90(slope );
 		// since the y_off contains also the way height, we need to remove it before rotations and add it back afterwards
 		for( uint8 i = 0; i < objlist.get_top(); i++ ) {
 			obj_t * obj = obj_bei( i );
@@ -117,7 +117,7 @@ void brueckenboden_t::rotate90()
 		}
 	}
 	else {
-		weg_hang = slope_t::rotate90( weg_hang );
+		weg_hang = old_slope_t::rotate90(weg_hang );
 		grund_t::rotate90();
 	}
 }
@@ -127,7 +127,7 @@ sint8 brueckenboden_t::get_weg_yoff() const
 {
 	if(  ist_karten_boden()  &&  weg_hang == 0  ) {
 		// we want to find maximum height of slope corner shortcut as we know this is n, s, e or w and single heights are not integer multiples of 8
-		return TILE_HEIGHT_STEP * slope_t::max_diff(slope);
+		return TILE_HEIGHT_STEP * old_slope_t::max_diff(slope);
 	}
 	else {
 		return 0;

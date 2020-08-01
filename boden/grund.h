@@ -156,7 +156,7 @@ protected:
 	/**
 	 * Slope (now saved locally), because different grounds need different slopes
 	 */
-	slope_t::type slope;
+	old_slope_t::type slope;
 
 	/**
 	 * Image of the walls
@@ -188,7 +188,7 @@ protected:
 	static karte_ptr_t welt;
 
 	// calculates the slope image and sets the draw_as_obj flag correctly
-	void calc_back_image(const sint8 hgt,const slope_t::type slope_this);
+	void calc_back_image(const sint8 hgt,const old_slope_t::type slope_this);
 
 	// this is the real image calculation, called for the actual ground image
 	virtual void calc_image_internal(const bool calc_only_snowline_change) = 0;
@@ -370,8 +370,8 @@ public:
 	inline void set_pos(koord3d newpos) { pos = newpos;}
 
 	// slope are now maintained locally
-	slope_t::type get_grund_hang() const { return slope; }
-	void set_grund_hang(slope_t::type sl) { slope = sl; }
+	old_slope_t::type get_grund_hang() const { return slope; }
+	void set_grund_hang(old_slope_t::type sl) { slope = sl; }
 
 	/**
 	 * Manche Böden können zu Haltestellen gehören.
@@ -433,9 +433,9 @@ public:
 	// returns slope
 	// if tile is not visible, 'flat' is returned
 	// special care has to be taken of tunnel mouths
-	inline slope_t::type get_disp_slope() const {
+	inline old_slope_t::type get_disp_slope() const {
 		return (  (underground_mode & ugm_level)  &&  (pos.z > underground_level  ||  (get_typ()==tunnelboden  &&  ist_karten_boden()  &&  pos.z == underground_level))
-							? (slope_t::type)slope_t::flat
+							? (old_slope_t::type)old_slope_t::flat
 							: get_grund_hang() );
 
 		/*switch(underground_mode) {// long version of the return statement above
@@ -478,7 +478,7 @@ public:
 	/**
 	 * returns slope of ways as displayed (special cases: bridge ramps, tunnel mouths, undergroundmode etc)
 	 */
-	slope_t::type get_disp_way_slope() const;
+	old_slope_t::type get_disp_way_slope() const;
 
 	/**
 	 * Displays the ground images (including foundations, fences and ways)
@@ -698,7 +698,7 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 	*/
 	obj_t *get_convoi_vehicle() const { return objlist.get_convoi_vehicle(); }
 
-	virtual slope_t::type get_weg_hang() const { return get_grund_hang(); }
+	virtual old_slope_t::type get_weg_hang() const { return get_grund_hang(); }
 
 	/*
 	 * Search a matching wayobj
@@ -827,7 +827,7 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 	 */
 	inline sint8 get_vmove(ribi_t::ribi ribi) const {
 		sint8 h = pos.z;
-		const slope_t::type way_slope = get_weg_hang();
+		const old_slope_t::type way_slope = get_weg_hang();
 
 		// only on slope height may changes
 		if(  way_slope  ) {

@@ -22,7 +22,7 @@ protected:
 
 public:
 	boden_t(loadsave_t *file, koord pos );
-	boden_t(koord3d pos, slope_t::type slope);
+	boden_t(koord3d pos, old_slope_t::type slope);
 
 	virtual void rdwr(loadsave_t *file);
 

@@ -52,7 +52,7 @@ wayobj_t::wayobj_t(loadsave_t* const file) :
 #else
 	obj_no_info_t()
 #endif
-	, hang(slope_t::flat)
+	, hang(old_slope_t::flat)
 {
 	rdwr(file);
 }
@@ -64,7 +64,7 @@ wayobj_t::wayobj_t(koord3d const pos, player_t* const owner, ribi_t::ribi const 
 #else
 	obj_no_info_t(pos)
 #endif
-	, hang(slope_t::flat)
+	, hang(old_slope_t::flat)
 {
 	desc = b;
 	dir = d;
@@ -99,8 +99,8 @@ wayobj_t::~wayobj_t()
 				// restore old speed limit and way constraints
 				weg->reset_way_constraints();
 				sint32 max_speed;
-				const slope_t::type hang = gr ? gr->get_weg_hang() : slope_t::flat;
-				if(hang != slope_t::flat)
+				const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
+				if(hang != old_slope_t::flat)
 				{
 					const uint slope_height = (hang & 7) ? 1 : 2;
 					if(slope_height == 1)
@@ -125,7 +125,7 @@ wayobj_t::~wayobj_t()
 					tunnel_t *t = gr->find<tunnel_t>(1);
 					if(t)
 					{
-						if(hang != slope_t::flat)
+						if(hang != old_slope_t::flat)
 						{
 							const uint slope_height = (hang & 7) ? 1 : 2;
 							if(slope_height == 1)
@@ -149,7 +149,7 @@ wayobj_t::~wayobj_t()
 					bruecke_t *b = gr->find<bruecke_t>(1);
 					if(b)
 					{
-						if(hang != slope_t::flat)
+						if(hang != old_slope_t::flat)
 						{
 							const uint slope_height = (hang & 7) ? 1 : 2;
 							if(slope_height == 1)
@@ -285,7 +285,7 @@ void wayobj_t::finish_rd()
 			// Weg wieder freigeben, wenn das Signal nicht mehr da ist.
 			weg->set_electrify(true);
 			sint32 way_top_speed;
-			if(hang != slope_t::flat)
+			if(hang != old_slope_t::flat)
 			{
 				const uint slope_height = (hang & 7) ? 1 : 2;
 				if(slope_height == 1)
@@ -323,7 +323,7 @@ void wayobj_t::rotate90()
 {
 	obj_t::rotate90();
 	dir = ribi_t::rotate90( dir);
-	hang = slope_t::rotate90( hang );
+	hang = old_slope_t::rotate90(hang );
 }
 
 
@@ -381,7 +381,7 @@ void wayobj_t::calc_image()
 
 		// if there is a slope, we are finished, only four choices here (so far)
 		hang = gr->get_weg_hang();
-		if(hang!=slope_t::flat) {
+		if(hang != old_slope_t::flat) {
 #ifdef MULTI_THREAD
 			pthread_mutex_unlock( &wayobj_calc_image_mutex );
 #endif

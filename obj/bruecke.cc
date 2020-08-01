@@ -72,8 +72,8 @@ void bruecke_t::calc_image()
 			weg0->lock_mutex();
 #endif
 			// if on a slope then start of bridge - take the upper value
-			const slope_t::type slope = gr->get_grund_hang();
-			bool is_snow = welt->get_climate( get_pos().get_2d() ) == arctic_climate  ||  get_pos().z + slope_t::max_diff(slope) >= welt->get_snowline();
+			const old_slope_t::type slope = gr->get_grund_hang();
+			bool is_snow = welt->get_climate( get_pos().get_2d() ) == arctic_climate  || get_pos().z + old_slope_t::max_diff(slope) >= welt->get_snowline();
 
 			// handle cases where old bridges don't have correct images
 			image_id display_image=desc->get_background( img, is_snow );
@@ -133,8 +133,8 @@ image_id bruecke_t::get_front_image() const
 {
 	grund_t *gr=welt->lookup(get_pos());
 	// if on a slope then start of bridge - take the upper value
-	const slope_t::type slope = gr->get_grund_hang();
-	bool is_snow = welt->get_climate( get_pos().get_2d() ) == arctic_climate  ||  get_pos().z + slope_t::max_diff(slope) >= welt->get_snowline();
+	const old_slope_t::type slope = gr->get_grund_hang();
+	bool is_snow = welt->get_climate( get_pos().get_2d() ) == arctic_climate  || get_pos().z + old_slope_t::max_diff(slope) >= welt->get_snowline();
 	// handle cases where old bridges don't have correct images
 	image_id display_image=desc->get_foreground( img, is_snow );
 	if(  display_image==IMG_EMPTY && desc->get_background( img, is_snow )==IMG_EMPTY  ) {
@@ -229,8 +229,8 @@ void bruecke_t::finish_rd()
 
 		const way_desc_t* way_desc = weg->get_desc();
 
-		const slope_t::type hang = gr->get_weg_hang();
-		if(hang != slope_t::flat)
+		const old_slope_t::type hang = gr->get_weg_hang();
+		if(hang != old_slope_t::flat)
 		{
 			const uint slope_height = (hang & 7) ? 1 : 2;
 			if(slope_height == 1)
@@ -263,7 +263,7 @@ void bruecke_t::finish_rd()
 		}
 	}
 	else {
-		if(  gr->get_grund_hang() == slope_t::flat  ) {
+		if(gr->get_grund_hang() == old_slope_t::flat  ) {
 			//img = desc->get_ramp( gr->get_weg_hang() );
 		}
 		else {
@@ -281,8 +281,8 @@ void bruecke_t::cleanup( player_t *player2 )
 	if(  const grund_t *gr = welt->lookup(get_pos())  ) {
 		if(  weg_t *weg0 = gr->get_weg( desc->get_waytype() )  ) {
 			const way_desc_t* const way_desc = weg0->get_desc();
-			const slope_t::type hang = gr ? gr->get_weg_hang() : slope_t::flat;
-			if(hang != slope_t::flat)
+			const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
+			if(hang != old_slope_t::flat)
 				{
 					const uint slope_height = (hang & 7) ? 1 : 2;
 					if(slope_height == 1)

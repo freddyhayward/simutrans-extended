@@ -162,7 +162,7 @@ koord3d tunnel_builder_t::find_end_pos(player_t *player, koord3d pos, koord zv, 
 
 		// steep slopes and we are appearing at the top of one
 		if(  gr->get_hoehe() == pos.z-1  &&  env_t::pak_height_conversion_factor==1  ) {
-			const slope_t::type new_slope = slope_type(-zv);
+			const old_slope_t::type new_slope = slope_type(-zv);
 			sint8 hsw = pos.z + corner_sw(new_slope);
 			sint8 hse = pos.z + corner_se(new_slope);
 			sint8 hne = pos.z + corner_ne(new_slope);
@@ -196,7 +196,7 @@ koord3d tunnel_builder_t::find_end_pos(player_t *player, koord3d pos, koord zv, 
  			if(  !gr  ) {
 				gr = welt->lookup(pos + koord3d(0,0,-2));
 			}
-			if(  gr  &&  gr->get_weg_hang() == slope_t::flat  ) {
+			if(  gr  && gr->get_weg_hang() == old_slope_t::flat  ) {
 				// Don't care about _flat_ tunnels below.
 				gr = NULL;
 			}
@@ -215,7 +215,7 @@ koord3d tunnel_builder_t::find_end_pos(player_t *player, koord3d pos, koord zv, 
 					return koord3d::invalid;
 				}
 				// fake tunnel tile
-				tunnelboden_t from(pos - zv, slope_t::flat);
+				tunnelboden_t from(pos - zv, old_slope_t::flat);
 				if (bauigel.is_allowed_step(&from, gr, &dummy)) {
 					return gr->get_pos();
 				}
@@ -224,7 +224,7 @@ koord3d tunnel_builder_t::find_end_pos(player_t *player, koord3d pos, koord zv, 
 				}
 			}
 			const uint8 slope = gr->get_grund_hang();
-			const slope_t::type new_slope = slope_type(-zv) * welt->get_settings().get_way_height_clearance();
+			const old_slope_t::type new_slope = slope_type(-zv) * welt->get_settings().get_way_height_clearance();
 
 			if(  gr->ist_karten_boden()  &&  ( slope!=new_slope  ||  pos.z!=gr->get_pos().z )  ) {
 				// lower terrain to match - most of time shouldn't need to raise
@@ -309,7 +309,7 @@ const char *tunnel_builder_t::build( player_t *player, koord pos, const tunnel_d
 
 	koord zv;
 	const waytype_t waytyp = desc->get_waytype();
-	const slope_t::type slope = gr->get_grund_hang();
+	const old_slope_t::type slope = gr->get_grund_hang();
 
 	if(  waytyp != powerline_wt  ) {
 		const weg_t *weg = gr->get_weg(waytyp);
@@ -331,7 +331,7 @@ const char *tunnel_builder_t::build( player_t *player, koord pos, const tunnel_d
 			return "Tunnel must start on single way!";
 		}
 	}
-	if(  !slope_t::is_single(slope)  ) {
+	if(  !old_slope_t::is_single(slope)  ) {
 		return "Tunnel muss an\nsingleem\nHang beginnen!\n";
 	}
 
@@ -375,7 +375,7 @@ const char *tunnel_builder_t::build( player_t *player, koord pos, const tunnel_d
 	// Begin and end found, we can build
 
 	const grund_t *end_gr = welt->lookup(end);
-	slope_t::type end_slope = slope_type(-zv) * env_t::pak_height_conversion_factor;
+	old_slope_t::type end_slope = slope_type(-zv) * env_t::pak_height_conversion_factor;
 	if(  full_tunnel  &&  (!end_gr  ||  end_gr->get_grund_hang()!=end_slope)  ) {
 		// end slope not at correct height - we have already checked in find_end_pos that we can change this
 		sint8 hsw = end.z + corner_sw(end_slope);
@@ -470,8 +470,8 @@ bool tunnel_builder_t::build_tunnel(player_t *player, koord3d start, koord3d end
 			weg->set_desc(way_desc);
 
 			const grund_t* gr = welt->lookup(pos);
-			const slope_t::type hang = gr ? gr->get_weg_hang() : slope_t::flat;
-			if(hang != slope_t::flat)
+			const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
+			if(hang != old_slope_t::flat)
 			{
 				const uint slope_height = (hang & 7) ? 1 : 2;
 				if(slope_height == 1)
@@ -546,8 +546,8 @@ bool tunnel_builder_t::build_tunnel(player_t *player, koord3d start, koord3d end
 			weg = weg_t::alloc(desc->get_waytype());
 			weg->set_desc(way_desc);
 			const grund_t* gr = welt->lookup(pos);
-			const slope_t::type hang = gr ? gr->get_weg_hang() : slope_t::flat;
-			if(hang != slope_t::flat)
+			const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
+			if(hang != old_slope_t::flat)
 			{
 				const uint slope_height = (hang & 7) ? 1 : 2;
 				if(slope_height == 1)
@@ -625,8 +625,8 @@ void tunnel_builder_t::build_tunnel_portal(player_t *player, koord3d end, koord 
 			tunnel->neuen_weg_bauen( weg, ribi, player );
 		}
 		const grund_t* gr = welt->lookup(weg->get_pos());
-		const slope_t::type hang = gr ? gr->get_weg_hang() : slope_t::flat;
-		if(hang != slope_t::flat)
+		const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
+		if(hang != old_slope_t::flat)
 		{
 			const uint slope_height = (hang & 7) ? 1 : 2;
 			if(slope_height == 1)
@@ -815,7 +815,7 @@ const char *tunnel_builder_t::remove(player_t *player, koord3d start, waytype_t 
 			}
 		}
 		else {
-			ribi_t::ribi mask = gr->get_grund_hang()!=slope_t::flat ? ~ribi_type(gr->get_grund_hang()) : ~ribi_type(slope_t::opposite(gr->get_weg_hang()));
+			ribi_t::ribi mask = gr->get_grund_hang() != old_slope_t::flat ? ~ribi_type(gr->get_grund_hang()) : ~ribi_type(old_slope_t::opposite(gr->get_weg_hang()));
 
 			// remove the second way first in the tunnel
 			if(gr->get_weg_nr(1)) {
@@ -836,7 +836,7 @@ const char *tunnel_builder_t::remove(player_t *player, koord3d start, waytype_t 
 			}
 
 			if( broad_type ) {
-				slope_t::type hang = gr->get_grund_hang();
+				old_slope_t::type hang = gr->get_grund_hang();
 				ribi_t::ribi dir = ribi_t::rotate90( ribi_type( hang ) );
 				if( broad_type & 1 ) {
 					const grund_t *gr_l = welt->lookup(pos + dir);

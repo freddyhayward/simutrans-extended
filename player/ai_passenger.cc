@@ -96,7 +96,7 @@ koord ai_passenger_t::find_area_for_hub( const koord lo, const koord ru, const k
 			const grund_t * gr = welt->lookup_kartenboden(trypos);
 			if(gr) {
 				// flat, solid
-				if(  gr->get_typ()==grund_t::boden  &&  gr->get_grund_hang()==slope_t::flat  ) {
+				if(  gr->get_typ()==grund_t::boden  && gr->get_grund_hang() == old_slope_t::flat  ) {
 					const obj_t* obj = gr->obj_bei(0);
 					int test_dist = shortest_distance( trypos, basis );
 					if (!obj || !obj->get_owner() || obj->get_owner() == sim::up_cast<player_t const*>(this)) {
@@ -154,8 +154,8 @@ koord ai_passenger_t::find_harbour_pos(karte_t* welt, const stadt_t *s )
 				}
 				if(  testdist<bestdist  ) {
 					grund_t *gr = welt->lookup_kartenboden(k);
-					slope_t::type hang = gr->get_grund_hang();
-					if(  gr->ist_natur()  &&  gr->get_hoehe() == welt->get_water_hgt(k)  &&  slope_t::is_way(hang)  &&  welt->is_water( k - koord(hang), koord(hang) * 4 + koord(1, 1) )  ) {
+					old_slope_t::type hang = gr->get_grund_hang();
+					if(gr->ist_natur() &&  gr->get_hoehe() == welt->get_water_hgt(k) && old_slope_t::is_way(hang) && welt->is_water(k - koord(hang), koord(hang) * 4 + koord(1, 1) )  ) {
 						// can built busstop here?
 						koord bushalt = k+koord(hang);
 						gr = welt->lookup_kartenboden(bushalt);

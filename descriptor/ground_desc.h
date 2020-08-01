@@ -76,12 +76,12 @@ public:
 	// image for all ground tiles
 	static image_id get_ground_tile(grund_t *gr);
 
-	static image_id get_water_tile(slope_t::type slope);
-	static image_id get_climate_tile(climate cl, slope_t::type slope);
-	static image_id get_snow_tile(slope_t::type slope);
-	static image_id get_beach_tile(slope_t::type slope, uint8 corners);
-	static image_id get_alpha_tile(slope_t::type slope);
-	static image_id get_alpha_tile(slope_t::type slope, uint8 corners);
+	static image_id get_water_tile(old_slope_t::type slope);
+	static image_id get_climate_tile(climate cl, old_slope_t::type slope);
+	static image_id get_snow_tile(old_slope_t::type slope);
+	static image_id get_beach_tile(old_slope_t::type slope, uint8 corners);
+	static image_id get_alpha_tile(old_slope_t::type slope);
+	static image_id get_alpha_tile(old_slope_t::type slope, uint8 corners);
 
 	static bool register_desc(const ground_desc_t *desc);
 
@@ -92,7 +92,7 @@ public:
 	 */
 	static void init_ground_textures(karte_t *world);
 
-	static image_id get_marker_image(slope_t::type slope_in, bool background)
+	static image_id get_marker_image(old_slope_t::type slope_in, bool background)
 	{
 		uint8 slope = double_grounds ? slope_in : slopetable[slope_in];
 		uint8 index = background ? (double_grounds ? (slope % 3) + 3 * ((uint8)(slope / 9)) + 27
@@ -102,7 +102,7 @@ public:
 		return marker->get_image(index);
 	}
 
-	static image_id get_border_image(slope_t::type slope_in)
+	static image_id get_border_image(old_slope_t::type slope_in)
 	{
 		uint8 slope = double_grounds ? slope_in : slopetable[slope_in];
 		uint8 index = double_grounds ? (slope % 3) + 3 * ((uint8)(slope / 9)) : (slope & 1) + ((slope >> 1) & 6);

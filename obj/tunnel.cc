@@ -74,7 +74,7 @@ void tunnel_t::calc_image()
 	if(desc)
 	{
 		grund_t *from = welt->lookup(get_pos());
-		slope_t::type hang = gr->get_grund_hang();
+		old_slope_t::type hang = gr->get_grund_hang();
 		ribi_t::ribi ribi_unmasked = gr->get_weg_ribi_unmasked(desc->get_waytype());
 
 		if(gr->ist_karten_boden())
@@ -189,8 +189,8 @@ void tunnel_t::finish_rd()
 		// change maintenance
 		weg_t *weg = gr->get_weg(desc->get_waytype());
 		if(weg) {
-			const slope_t::type hang = gr ? gr->get_weg_hang() : slope_t::flat;
-			if(hang != slope_t::flat)
+			const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
+			if(hang != old_slope_t::flat)
 			{
 				const uint slope_height = (hang & 7) ? 1 : 2;
 				if(slope_height == 1)
@@ -226,8 +226,8 @@ void tunnel_t::cleanup( player_t *player2 )
 	if(gr) {
 		weg_t *weg = gr->get_weg( desc->get_waytype() );
 		if(weg)	{
-			const slope_t::type hang = gr ? gr->get_weg_hang() : slope_t::flat;
-			if(hang != slope_t::flat)
+			const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
+			if(hang != old_slope_t::flat)
 			{
 				const uint slope_height = (hang & 7) ? 1 : 2;
 				if(slope_height == 1)
