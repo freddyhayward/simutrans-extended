@@ -7416,7 +7416,7 @@ bool convoi_t::can_overtake(overtaker_t *other_overtaker, sint32 other_speed, si
 			return false;
 		}
 		overtaking_mode_t overtaking_mode_loop = str->get_overtaking_mode();
-		if(  overtaking_mode_loop > oneway_mode  && gr->get_weg_hang() != old_slope_t::flat  ) {
+		if(  overtaking_mode_loop > oneway_mode  && !gr->get_weg_hang().is_flat()  ) {
 			return false;
 		}
 

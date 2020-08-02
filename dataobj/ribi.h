@@ -18,9 +18,10 @@ class ribi_t;
 class slope_t {
 private:
     uint8 value;
-    static constexpr uint8 MAX_CNR_HGT = 2;
-    static constexpr uint8 NUM_CNR_HGTS = MAX_CNR_HGT + 1;
-    enum special : uint8 {
+
+    constexpr uint8 cnr_hgt(uint8 c) const {return value / c % NUM_CNR_HGTS;} //TODO: remove once value can be sufficiently accessed through other methods.
+public:
+   enum special : uint8 {
         flat = 0,
 
         sw = 1, se = 3, ne = 9, nw = 27,
@@ -36,16 +37,21 @@ private:
         raised = all_up_two,
         max_number = all_up_two,
     };
-public:
-    slope_t() : value(flat) {};
-    explicit constexpr slope_t(uint8 _v) : value(_v) {};
+    static constexpr uint8 MAX_CNR_HGT = 2;
+    static constexpr uint8 NUM_CNR_HGTS = MAX_CNR_HGT + 1;
+    static constexpr uint8 hgt_max(uint8 a, uint8 b) {return a ? a > b : b;}
+    static constexpr uint8 hgt_min(uint8 a, uint8 b) {return a ? a < b : b;}
+    constexpr uint8 sw_cnr() const {return cnr_hgt(sw);}
+    constexpr uint8 se_cnr() const {return cnr_hgt(se);}
+    constexpr uint8 ne_cnr() const {return cnr_hgt(ne);}
+    constexpr uint8 nw_cnr() const {return cnr_hgt(nw);}
+    constexpr bool any_eq(uint8 hgt) const {return cnr_hgt(sw) == hgt || cnr_hgt(se) == hgt || cnr_hgt(ne) == hgt || cnr_hgt(nw) == hgt;}
+    constexpr bool any_gt(uint8 hgt) const {return cnr_hgt(sw) > hgt || cnr_hgt(se) > hgt || cnr_hgt(ne) > hgt || cnr_hgt(nw) > hgt;}
+    constexpr slope_t() : value(flat) {}; // Flat slope by default
+    constexpr explicit slope_t(uint8 _v) : value(_v) {};
     constexpr slope_t(uint8 _sw, uint8 _se, uint8 _ne, uint8 _nw) : slope_t(_sw*sw + _se*se + _ne*ne + _nw*nw) {};
 
     constexpr bool is_flat() const {return value == flat;} //TODO: remove once value can be sufficiently accessed through other methods.
-
-    constexpr uint8 cnr_hgt(uint8 c) const {return value / c % NUM_CNR_HGTS;} //TODO: remove once value can be sufficiently accessed through other methods.
-
-    constexpr bool any_eq(uint8 hgt) const {return cnr_hgt(sw) == hgt || cnr_hgt(se) == hgt || cnr_hgt(ne) == hgt || cnr_hgt(nw) == hgt;}
 
     constexpr bool allows_way_ns() const {return cnr_hgt(ne) == cnr_hgt(nw) && cnr_hgt(sw) == cnr_hgt(se);} //TODO: use generalised function with ribi_t::ribi as argument
     constexpr bool allows_way_ew() const {return cnr_hgt(se) == cnr_hgt(ne) && cnr_hgt(sw) == cnr_hgt(nw);} //TODO: use generalised function with ribi_t::ribi as argument
@@ -66,13 +72,29 @@ public:
     constexpr uint8 cnr_diff(uint8 c, slope_t other) const {return other.cnr_hgt(c) > cnr_hgt(c) ? other.cnr_hgt(c) - cnr_hgt(c) : cnr_hgt(c) - other.cnr_hgt(c);}
 
     constexpr slope_t diff(slope_t other) const {return {cnr_diff(sw, other), cnr_diff(se, other), cnr_diff(ne, other), cnr_diff(nw, other)};}
-    constexpr slope_t opposite() const {return is_single() ? (diff(slope_t(max_cnr_hgt(), max_cnr_hgt(), max_cnr_hgt(), max_cnr_hgt()))) : slope_t();}
+    constexpr slope_t opposite() const {return is_single() ? (diff(filled(max_cnr_hgt()))) : slope_t();}
 
     static uint8 min_diff(slope_t high, slope_t low) {return high.diff(low).min_cnr_hgt();}
 
     constexpr slope_t rotate90() const {return {cnr_hgt(se), cnr_hgt(ne), cnr_hgt(nw), cnr_hgt(sw)};}
 
-    uint8 get_value() const {return value;} //TODO: remove once value can be sufficiently accessed through other methods.
+    constexpr uint8 get_value() const {return value;} //TODO: remove once value can be sufficiently accessed through other methods.
+
+    constexpr bool is_legal() const {return !is_all_up() && !any_gt(MAX_CNR_HGT);}
+
+    constexpr bool operator==(slope_t other) const {return get_value() == other.get_value();}
+    //bool operator==(uint8 other) const {assert(false); return false;}
+    constexpr bool operator!=(slope_t other) const {return get_value() != other.get_value();}
+
+    constexpr slope_t operator-=(slope_t rhs) const {return slope_t(get_value() - rhs.get_value());}
+
+    constexpr slope_t doubled() const {return slope_t(value * 2);}
+
+    static constexpr slope_t filled(uint8 hgt) {return {hgt, hgt, hgt, hgt};}
+
+    static constexpr slope_t combined(slope_t a, slope_t b) {return slope_t(a.get_value() | b.get_value());}
+    static constexpr slope_t combined_max(slope_t a, slope_t b) {return {hgt_max(a.sw_cnr(), b.sw_cnr()), hgt_max(a.se_cnr(), b.se_cnr()), hgt_max(a.ne_cnr(), b.ne_cnr()), hgt_max(a.ne_cnr(), b.ne_cnr())};}
+    static constexpr slope_t combined_min(slope_t a, slope_t b) {return {hgt_min(a.sw_cnr(), b.sw_cnr()), hgt_min(a.se_cnr(), b.se_cnr()), hgt_min(a.ne_cnr(), b.ne_cnr()), hgt_min(a.ne_cnr(), b.ne_cnr())};}
 };
 
 /**
@@ -80,7 +102,7 @@ public:
 */
 class old_slope_t {
 
-	/// Static lookup table
+    /// Static lookup table
 	static const int flags[81];
 
 	/// Named constants for the flags table
@@ -124,14 +146,14 @@ public:
 	/*
 	 * Macros to access the height of the 4 corners:
 	 */
-#define corner_sw(i)  ((i)%old_slope_t::southeast)                      // sw corner
-#define corner_se(i) (((i)/old_slope_t::southeast)%old_slope_t::southeast)  // se corner
-#define corner_ne(i) (((i)/old_slope_t::northeast)%old_slope_t::southeast)  // ne corner
-#define corner_nw(i)  ((i)/old_slope_t::northwest)                      // nw corner
+#define corner_sw_old(i)  ((i)%old_slope_t::southeast)                      // sw corner
+#define corner_se_old(i) (((i)/old_slope_t::southeast)%old_slope_t::southeast)  // se corner
+#define corner_ne_old(i) (((i)/old_slope_t::northeast)%old_slope_t::southeast)  // ne corner
+#define corner_nw_old(i)  ((i)/old_slope_t::northwest)                      // nw corner
 
 #define encode_corners(sw, se, ne, nw) ( (sw) * old_slope_t::southwest + (se) * old_slope_t::southeast + (ne) * old_slope_t::northeast + (nw) * old_slope_t::northwest )
 
-#define is_one_high_old(i)   (i & 7)  // quick method to know whether a slope is one high - relies on two high slopes being divisible by 8 -> i&7=0 (only works for slopes with flag single)
+#define is_one_high_old(i)   ((i) & 7)  // quick method to know whether a slope is one high - relies on two high slopes being divisible by 8 -> i&7=0 (only works for slopes with flag single)
 
 	/// Compute the slope opposite to @p x. Returns flat if @p x does not allow ways on it.
 	static type opposite(type x) { return is_single(x) ? (is_one_high_old(x) ? (old_slope_t::all_up_one - x) : (old_slope_t::all_up_two - x)) : flat; }
@@ -142,7 +164,7 @@ public:
 	/// Returns maximal height difference between the corners of this slope.
 	static uint8 max_diff(type x) { return (x != 0) + (flags[x] & doubles); }
 	/// Computes minimum height differnce between corners of  @p high and @p low.
-	static sint8 min_diff(type high, type low) { return min(min(corner_sw(high) - corner_sw(low), corner_se(high) - corner_se(low)), min(corner_ne(high) - corner_ne(low), corner_nw(high) - corner_nw(low))); }
+	static sint8 min_diff(type high, type low) { return min(min(corner_sw_old(high) - corner_sw_old(low), corner_se_old(high) - corner_se_old(low)), min(corner_ne_old(high) - corner_ne_old(low), corner_nw_old(high) - corner_nw_old(low))); }
 
 	/// Returns if slope prefers certain way directions (either n/s or e/w).
 	static bool is_single(type x) { return (flags[x] & single) != 0; }
@@ -306,8 +328,8 @@ public:
 * Calculate directions from slopes.
 * Go upward on the slope: slope_t::north translates to ribi_t::south.
 */
-old_slope_t::type slope_type(koord dir);
-old_slope_t::type slope_type(ribi_t::ribi);
+slope_t slope_type(koord dir);
+slope_t slope_type(ribi_t::ribi);
 
 /**
 * Calculate direction bit from coordinate differences.
@@ -324,7 +346,7 @@ ribi_t::ribi ribi_type(const koord3d& dir);
 * Calculate direction bit from slope.
 * Note: slope_t::north (slope north) will be translated to ribi_t::south (direction south).
 */
-ribi_t::ribi ribi_type(old_slope_t::type slope);
+ribi_t::ribi ribi_type(slope_t slope);
 
 /**
 * Calculate direction bit for travel from @p from to @p to.

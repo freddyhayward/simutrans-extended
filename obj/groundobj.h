@@ -34,7 +34,7 @@ public:
 	static bool register_desc(groundobj_desc_t *desc);
 	static bool successfully_loaded();
 
-	static const groundobj_desc_t *random_groundobj_for_climate(climate_bits cl, old_slope_t::type slope );
+	static const groundobj_desc_t *random_groundobj_for_climate(climate_bits cl, slope_t slope );
 
 	groundobj_t(loadsave_t *file);
 	groundobj_t(koord3d pos, const groundobj_desc_t *);

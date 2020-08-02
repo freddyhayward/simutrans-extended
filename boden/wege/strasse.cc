@@ -181,11 +181,11 @@ void strasse_t::rdwr(loadsave_t *file)
 		const grund_t* gr = welt->lookup(get_pos());
 		const bruecke_t *bridge = gr ? gr->find<bruecke_t>() : NULL;
 		const tunnel_t *tunnel = gr ? gr->find<tunnel_t>() : NULL;
-		const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
+		const slope_t hang = gr ? gr->get_weg_hang() : slope_t();
 
-		if(hang != old_slope_t::flat)
+		if(!hang.is_flat())
 		{
-			const uint slope_height = (hang & 7) ? 1 : 2;
+			const uint slope_height = hang.is_one_high() ? 1 : 2;
 			if(slope_height == 1)
 			{
 				uint32 gradient_speed = desc->get_topspeed_gradient_1();

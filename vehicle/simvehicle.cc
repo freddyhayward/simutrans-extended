@@ -592,9 +592,9 @@ void vehicle_base_t::calc_height(grund_t *gr)
 			}
 		}
 		// will not work great with ways, but is very short!
-		old_slope_t::type hang = gr->get_weg_hang();
-		if(  hang  ) {
-			const uint slope_height = is_one_high_old(hang) ? 1 : 2;
+		slope_t hang = gr->get_weg_hang();
+		if(!hang.is_flat()) {
+			const uint slope_height = hang.is_one_high() ? 1 : 2;
 			ribi_t::ribi hang_ribi = ribi_type(hang);
 			if(  ribi_t::doubles(hang_ribi)  ==  ribi_t::doubles(direction)) {
 				zoff_start = hang_ribi & direction                      ? 2*slope_height : 0;  // 0 .. 4
@@ -1591,7 +1591,7 @@ grund_t* vehicle_t::hop_check()
 				return NULL;
 			}
 			// check for recently built bridges/tunnels or reverse branches (really slows down the game, so we do this only on slopes)
-			if(  bd->get_weg_hang()  ) {
+			if(  !bd->get_weg_hang().is_flat()  ) {
 				grund_t *from;
 				if(  !bd->get_neighbour( from, get_waytype(), ribi_type( get_pos(), pos_next ) )  ) {
 					// way likely destroyed or altered => reroute
@@ -1812,7 +1812,7 @@ sint32 vehicle_t::calc_speed_limit(const weg_t *w, const weg_t *weg_previous, fi
 		return speed_limit;
 	}
 	const bool is_corner = current_direction != previous_direction;
-	const bool is_slope = welt->lookup(w->get_pos())->get_weg_hang() != old_slope_t::flat;
+	const bool is_slope = !welt->lookup(w->get_pos())->get_weg_hang().is_flat();
 	const bool slope_specific_speed = w->get_desc()->get_topspeed_gradient_1() < w->get_desc()->get_topspeed() || w->get_desc()->get_topspeed_gradient_2() < w->get_desc()->get_topspeed();
 
 	const bool is_tilting = desc->get_tilting();
@@ -2043,12 +2043,12 @@ void vehicle_t::calc_drag_coefficient(const grund_t *gr) //,const int h_alt, con
 	// Cumulative drag for hills: @author: jamespetts
 	// See here for an explanation of the additional resistance
 	// from hills: https://en.wikibooks.org/wiki/Fundamentals_of_Transportation/Grade
-	const old_slope_t::type hang = gr->get_weg_hang();
-	if(hang != old_slope_t::flat)
+	const slope_t hang = gr->get_weg_hang();
+	if(!hang.is_flat())
 	{
 		// Bernd Gabriel, Nov, 30 2009: at least 1 partial direction must match for uphill (op '&'), but not the
 		// complete direction. The hill might begin in a curve and then '==' accidently accelerates the vehicle.
-		const uint slope_height = is_one_high_old(hang) ? 1 : 2;
+		const uint slope_height = hang.is_one_high() ? 1 : 2;
 		if(ribi_type(hang) & direction)
 		{
 			// Uphill
@@ -3570,11 +3570,12 @@ int road_vehicle_t::get_cost(const grund_t *gr, const sint32 max_speed, koord fr
 	}
 
 	// effect of slope
-	if(  gr->get_weg_hang()!=0  ) {
+	if(  !gr->get_weg_hang().is_flat()  ) {
 		// Knightly : check if the slope is upwards, relative to the previous tile
 		from_pos -= gr->get_pos().get_2d();
 		// 75 hardcoded, see get_cost_upslope()
-		costs += 75 * old_slope_t::get_sloping_upwards(gr->get_weg_hang(), from_pos.x, from_pos.y );
+		// TODO:: replace this
+		costs += 75 * old_slope_t::get_sloping_upwards(gr->get_weg_hang().get_value(), from_pos.x, from_pos.y );
 	}
 
 	// It is now difficult to calculate here whether the vehicle is overweight, so do this in the route finder instead.
@@ -4825,11 +4826,12 @@ int rail_vehicle_t::get_cost(const grund_t *gr, const sint32 max_speed, koord fr
 	}
 
 	// effect of slope
-	if(  gr->get_weg_hang()!=0  ) {
+	if(  !gr->get_weg_hang().is_flat()  ) {
 		// Knightly : check if the slope is upwards, relative to the previous tile
 		from_pos -= gr->get_pos().get_2d();
 		// 125 hardcoded, see get_cost_upslope()
-		costs += 125 * old_slope_t::get_sloping_upwards(gr->get_weg_hang(), from_pos.x, from_pos.y );
+		// TODO: replace this
+		costs += 125 * old_slope_t::get_sloping_upwards(gr->get_weg_hang().get_value(), from_pos.x, from_pos.y );
 	}
 
 	//@author: jamespetts
@@ -5475,8 +5477,8 @@ bool rail_vehicle_t::can_enter_tile(const grund_t *gr, sint32 &restart_speed, ui
 			gr_bridge = welt->lookup(koord3d(i_pos.x, i_pos.y, i_pos.z + 2));
 		}
 
-		old_slope_t::type old_hang = gr->get_weg_hang();
-		old_slope_t::type new_hang = gr_new ? gr_new->get_weg_hang() : old_hang;
+		slope_t old_hang = gr->get_weg_hang();
+		slope_t new_hang = gr_new ? gr_new->get_weg_hang() : old_hang;
 
 		bool corner			= !(old_dir & new_dir);
 		bool different_hill = old_hang != new_hang;
@@ -8243,7 +8245,7 @@ void water_vehicle_t::calc_drag_coefficient(const grund_t *gr)
 
 	// flat water
 	current_friction = get_friction_of_waytype(water_wt);
-	if(gr->get_weg_hang()) {
+	if(!gr->get_weg_hang().is_flat()) {
 		// hill up or down => in lock => deccelarte
 		current_friction += 15;
 	}

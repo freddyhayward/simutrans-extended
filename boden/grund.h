@@ -156,7 +156,7 @@ protected:
 	/**
 	 * Slope (now saved locally), because different grounds need different slopes
 	 */
-	old_slope_t::type slope;
+	slope_t slope;
 
 	/**
 	 * Image of the walls
@@ -188,7 +188,7 @@ protected:
 	static karte_ptr_t welt;
 
 	// calculates the slope image and sets the draw_as_obj flag correctly
-	void calc_back_image(const sint8 hgt,const old_slope_t::type slope_this);
+	void calc_back_image(const sint8 hgt,const slope_t slope_this);
 
 	// this is the real image calculation, called for the actual ground image
 	virtual void calc_image_internal(const bool calc_only_snowline_change) = 0;
@@ -370,8 +370,8 @@ public:
 	inline void set_pos(koord3d newpos) { pos = newpos;}
 
 	// slope are now maintained locally
-	old_slope_t::type get_grund_hang() const { return slope; }
-	void set_grund_hang(old_slope_t::type sl) { slope = sl; }
+	slope_t get_grund_hang() const { return slope; }
+	void set_grund_hang(slope_t s) { slope = s; }
 
 	/**
 	 * Manche Böden können zu Haltestellen gehören.
@@ -400,19 +400,19 @@ public:
 	{
 		switch (corner) {
 		case slope4_t::corner_SW: {
-			return pos.z + corner_sw(slope);
+			return pos.z + slope.sw_cnr();
 			break;
 		}
 		case slope4_t::corner_SE: {
-			return pos.z + corner_se(slope);
+			return pos.z + slope.se_cnr();
 			break;
 		}
 		case slope4_t::corner_NE: {
-			return pos.z + corner_ne(slope);
+			return pos.z + slope.ne_cnr();
 			break;
 		}
 		default: {
-			return pos.z + corner_nw(slope);
+			return pos.z + slope.nw_cnr();
 			break;
 		}
 		}
@@ -433,9 +433,9 @@ public:
 	// returns slope
 	// if tile is not visible, 'flat' is returned
 	// special care has to be taken of tunnel mouths
-	inline old_slope_t::type get_disp_slope() const {
+	inline slope_t get_disp_slope() const {
 		return (  (underground_mode & ugm_level)  &&  (pos.z > underground_level  ||  (get_typ()==tunnelboden  &&  ist_karten_boden()  &&  pos.z == underground_level))
-							? (old_slope_t::type)old_slope_t::flat
+							? slope_t()
 							: get_grund_hang() );
 
 		/*switch(underground_mode) {// long version of the return statement above
@@ -452,7 +452,7 @@ public:
 			switch(underground_mode) {
 				case ugm_none: return ist_karten_boden();
 				case ugm_all:  return true;
-				case ugm_level:return  pos.z == underground_level  ||  pos.z+max(max(corner_sw(slope),corner_se(slope)),max(corner_ne(slope),corner_nw(slope))) == underground_level  ||  (ist_karten_boden()  &&  pos.z <= underground_level);
+				case ugm_level:return  pos.z == underground_level ||  pos.z+slope.max_cnr_hgt() == underground_level || (ist_karten_boden() && pos.z <= underground_level);
 			}
 		}
 		else {
@@ -478,7 +478,7 @@ public:
 	/**
 	 * returns slope of ways as displayed (special cases: bridge ramps, tunnel mouths, undergroundmode etc)
 	 */
-	old_slope_t::type get_disp_way_slope() const;
+	slope_t get_disp_way_slope() const;
 
 	/**
 	 * Displays the ground images (including foundations, fences and ways)
@@ -611,19 +611,19 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 	* @author Hj. Malthaner
 	*/
 	weg_t *get_weg(waytype_t typ) const {
-		if (weg_t* const w = get_weg_nr(0)) {
-			const waytype_t wt = w->get_waytype();
+		if (weg_t* const w0= get_weg_nr(0)) {
+			const waytype_t wt = w0->get_waytype();
 			if (wt == typ || (typ == any_wt && wt > 0)) {
-				return w;
+				return w0;
 			}
 			else if (wt > typ) {
 				// ways are ordered wrt to waytype
 				return NULL;
 			}
 			// try second way (if exists)
-			if (weg_t* const w = get_weg_nr(1)) {
-				if (w->get_waytype() == typ) {
-					return w;
+			if (weg_t* const w1 = get_weg_nr(1)) {
+				if (w1->get_waytype() == typ) {
+					return w1;
 				}
 			}
 		}
@@ -698,7 +698,7 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 	*/
 	obj_t *get_convoi_vehicle() const { return objlist.get_convoi_vehicle(); }
 
-	virtual old_slope_t::type get_weg_hang() const { return get_grund_hang(); }
+	virtual slope_t get_weg_hang() const { return get_grund_hang(); }
 
 	/*
 	 * Search a matching wayobj
@@ -827,15 +827,15 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 	 */
 	inline sint8 get_vmove(ribi_t::ribi ribi) const {
 		sint8 h = pos.z;
-		const old_slope_t::type way_slope = get_weg_hang();
+		const slope_t way_slope = get_weg_hang();
 
 		// only on slope height may changes
-		if(  way_slope  ) {
+		if(  !way_slope.is_flat()  ) {
 			if(ribi & ribi_t::northeast) {
-				h += corner_ne(way_slope);
+				h += way_slope.ne_cnr();
 			}
 			else {
-				h += corner_sw(way_slope);
+				h += way_slope.sw_cnr();
 			}
 		}
 
@@ -844,9 +844,9 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 		 * call involved in ist_bruecke()
 		 */
 		if(  way_slope != slope  ) {
-			if(  ist_bruecke()  &&  slope  ) {
+			if(  ist_bruecke()  &&  !slope.is_flat()  ) {
 				// calculate height quicker because we know that slope exists and is north, south, east or west
-				h += is_one_high_old(slope) ? 1 : 2;
+				h += slope.is_one_high() ? 1 : 2;
 			}
 		}
 

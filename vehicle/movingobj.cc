@@ -319,7 +319,7 @@ bool movingobj_t::check_next_tile( const grund_t *gr ) const
 
 	if(desc->get_waytype()==road_wt) {
 		// can cross roads
-		if(gr->get_typ()!=grund_t::boden  ||  !old_slope_t::is_way(gr->get_grund_hang())) {
+		if(gr->get_typ()!=grund_t::boden  ||  !gr->get_grund_hang().allows_way()) {
 			return false;
 		}
 		// only on roads, do not walk in cities
@@ -340,7 +340,7 @@ bool movingobj_t::check_next_tile( const grund_t *gr ) const
 	}
 	else if(desc->get_waytype()==ignore_wt) {
 		// crosses nothing
-		if(!gr->ist_natur()  ||  !old_slope_t::is_way(gr->get_grund_hang())) {
+		if(!gr->ist_natur()  ||  !gr->get_grund_hang().allows_way()) {
 			return false;
 		}
 		if(!desc->can_build_trees_here()) {

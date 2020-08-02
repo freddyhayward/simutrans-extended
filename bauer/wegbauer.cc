@@ -511,21 +511,21 @@ bool way_builder_t::check_slope( const grund_t *from, const grund_t *to )
 	const koord zv=to_pos-from_pos;
 
 	if(  !desc->has_double_slopes()
-		&&  (    (from->get_weg_hang()  &&  !is_one_high_old(from->get_weg_hang()))
-		      ||   (to->get_weg_hang()  &&    !is_one_high_old(to->get_weg_hang()))  )  ) {
+		&&  (    (!from->get_weg_hang().is_flat() &&  !from->get_weg_hang().is_one_high())
+		      ||   (!to->get_weg_hang().is_flat() &&    !to->get_weg_hang().is_one_high())  )  ) {
 		return false;
 	}
 
 	if(from==to) {
-		if(!old_slope_t::is_way(from->get_weg_hang())) {
+		if(!from->get_weg_hang().allows_way()) {
 			return false;
 		}
 	}
 	else {
-		if(from->get_weg_hang()  &&  ribi_t::doubles(ribi_type(from->get_weg_hang()))!=ribi_t::doubles(ribi_type(zv))) {
+		if(!from->get_weg_hang().is_flat() &&  ribi_t::doubles(ribi_type(from->get_weg_hang()))!=ribi_t::doubles(ribi_type(zv))) {
 			return false;
 		}
-		if(to->get_weg_hang()  &&  ribi_t::doubles(ribi_type(to->get_weg_hang()))!=ribi_t::doubles(ribi_type(zv))) {
+		if(!to->get_weg_hang().is_flat() &&  ribi_t::doubles(ribi_type(to->get_weg_hang()))!=ribi_t::doubles(ribi_type(zv))) {
 			return false;
 		}
 	}
@@ -602,8 +602,8 @@ bool way_builder_t::is_allowed_step( const grund_t *from, const grund_t *to, sin
 	const koord to_pos=to->get_pos().get_2d();
 	const koord zv=to_pos-from_pos;
 	// fake empty elevated tiles
-	static monorailboden_t to_dummy(koord3d::invalid, old_slope_t::flat);
-	static monorailboden_t from_dummy(koord3d::invalid, old_slope_t::flat);
+	static monorailboden_t to_dummy(koord3d::invalid, slope_t());
+	static monorailboden_t from_dummy(koord3d::invalid, slope_t());
 
 	const sint8 altitude = max(from->get_pos().z, to->get_pos().z) - welt->get_groundwater();
 	const sint8 max_altitude = desc->get_max_altitude();
@@ -625,27 +625,27 @@ bool way_builder_t::is_allowed_step( const grund_t *from, const grund_t *to, sin
 		return false;
 	}
 
-	if(bautyp==luft  &&  (from->get_grund_hang()+to->get_grund_hang()!=0  ||  (from->hat_wege()  &&  from->hat_weg(air_wt)==0)  ||  (to->hat_wege()  &&  to->hat_weg(air_wt)==0))) {
+	if(bautyp==luft  &&  ((!from->get_grund_hang().is_flat() || !to->get_grund_hang().is_flat())  ||  (from->hat_wege()  &&  from->hat_weg(air_wt)==0)  ||  (to->hat_wege()  &&  to->hat_weg(air_wt)==0))) {
 		// absolutely no slopes for runways, neither other ways
 		return false;
 	}
 
 	bool to_flat = false; // to tile will be flattened
 	if(from==to) {
-		if((bautyp&tunnel_flag)  &&  !old_slope_t::is_way(from->get_weg_hang())) {
+		if((bautyp&tunnel_flag)  &&  !from->get_weg_hang().allows_way()) {
 			return false;
 		}
 	}
 	else {
 		// check slopes
-		bool ok_slope = from->get_weg_hang() == old_slope_t::flat || ribi_t::doubles(ribi_type(from->get_weg_hang())) == ribi_t::doubles(ribi_type(zv));
-		ok_slope &= to->get_weg_hang() == old_slope_t::flat || ribi_t::doubles(ribi_type(to->get_weg_hang())) == ribi_t::doubles(ribi_type(zv));
+		bool ok_slope = from->get_weg_hang().is_flat() || ribi_t::doubles(ribi_type(from->get_weg_hang())) == ribi_t::doubles(ribi_type(zv));
+		ok_slope &= to->get_weg_hang().is_flat() || ribi_t::doubles(ribi_type(to->get_weg_hang())) == ribi_t::doubles(ribi_type(zv));
 
 		// try terraforming
 		if (!ok_slope) {
-			uint8 dummy,to_slope;
+			slope_t dummy,to_slope;
 			if (  (bautyp & terraform_flag) != 0  &&  from->ist_natur()  &&  to->ist_natur()  &&  check_terraforming(from,to,&dummy,&to_slope) ) {
-				to_flat = to_slope == old_slope_t::flat;
+				to_flat = to_slope.is_flat();
 			}
 			else {
 				// slopes not ok and no terraforming possible
@@ -927,7 +927,7 @@ bool way_builder_t::is_allowed_step( const grund_t *from, const grund_t *to, sin
 			if((str==NULL  &&  to->hat_wege())  ||  (str  &&  to->has_two_ways())) {
 				*costs += 4;	// avoid crossings
 			}
-			if(to->get_weg_hang()!=0  &&  !to_flat) {
+			if(!to->get_weg_hang().is_flat()  &&  !to_flat) {
 				*costs += s.way_count_slope;
 			}
 		}
@@ -959,7 +959,7 @@ bool way_builder_t::is_allowed_step( const grund_t *from, const grund_t *to, sin
 			if((sch  &&  to->has_two_ways())  ||  (sch==NULL  &&  to->hat_wege())) {
 				*costs += 4;	// avoid crossings
 			}
-			if(to->get_weg_hang()!=0  &&  !to_flat) {
+			if(!to->get_weg_hang().is_flat()  &&  !to_flat) {
 				*costs += s.way_count_slope;
 			}
 		}
@@ -990,7 +990,7 @@ bool way_builder_t::is_allowed_step( const grund_t *from, const grund_t *to, sin
 				if(to->hat_weg(road_wt)) {
 					*costs += s.way_count_straight;
 				}
-				if(to->get_weg_hang()!=0  &&  !to_flat) {
+				if(!to->get_weg_hang().is_flat()  &&  !to_flat) {
 					*costs += s.way_count_slope;
 				}
 			}
@@ -1043,7 +1043,7 @@ bool way_builder_t::is_allowed_step( const grund_t *from, const grund_t *to, sin
 			// calculate costs
 			if(ok) {
 				*costs = to->is_water() ||  canal  ? s.way_count_straight : s.way_count_leaving_road; // prefer water very much
-				if(to->get_weg_hang()!=0  &&  !to_flat) {
+				if(!to->get_weg_hang().is_flat()  &&  !to_flat) {
 					*costs += s.way_count_slope * 2;
 				}
 			}
@@ -1063,7 +1063,7 @@ bool way_builder_t::is_allowed_step( const grund_t *from, const grund_t *to, sin
 				if(ok) {
 					// prefer existing rivers:
 					*costs = to->hat_weg(water_wt) ? 10 : 10+simrand(s.way_count_90_curve, "bool way_builder_t::is_allowed_step");
-					if(to->get_weg_hang()!=0  &&  !to_flat) {
+					if(!to->get_weg_hang().is_flat()  &&  !to_flat) {
 						*costs += s.way_count_slope * 10;
 					}
 				}
@@ -1087,16 +1087,16 @@ bool way_builder_t::is_allowed_step( const grund_t *from, const grund_t *to, sin
 }
 
 
-bool way_builder_t::check_terraforming( const grund_t *from, const grund_t *to, uint8* new_from_slope, uint8* new_to_slope)
+bool way_builder_t::check_terraforming( const grund_t *from, const grund_t *to, slope_t* new_from_slope, slope_t* new_to_slope)
 {
 	// only for normal green tiles
-	const old_slope_t::type from_slope = from->get_weg_hang();
-	const old_slope_t::type to_slope = to->get_weg_hang();
+	const slope_t from_slope = from->get_weg_hang();
+	const slope_t to_slope = to->get_weg_hang();
 	const sint8 from_hgt = from->get_hoehe();
 	const sint8 to_hgt = to->get_hoehe();
 	// we may change slope of a tile if it is sloped already
-	if(  (from_slope == old_slope_t::flat || from->get_hoehe() == welt->get_water_hgt(from->get_pos().get_2d() ))
-	  &&  (to_slope == old_slope_t::flat || to->get_hoehe() == welt->get_water_hgt(to->get_pos().get_2d() ))  ) {
+	if(  (from_slope.is_flat() || from->get_hoehe() == welt->get_water_hgt(from->get_pos().get_2d() ))
+	  &&  (to_slope.is_flat() || to->get_hoehe() == welt->get_water_hgt(to->get_pos().get_2d() ))  ) {
 		return false;
 	}
 	else if(  abs( from_hgt - to_hgt ) <= (desc->has_double_slopes() ? 2 : 1)  ) {
@@ -1124,24 +1124,24 @@ bool way_builder_t::check_terraforming( const grund_t *from, const grund_t *to, 
 		sint8 end    = to_hgt * 2;
 		// get 3 heights - start (min start from, but should be same), middle (average end from/average start to), end (min end to)
 		if(  dir ==  koord::north  ) {
-			start  += corner_sw(from_slope) + corner_se(from_slope);
-			middle += corner_ne(from_slope) + corner_nw(from_slope);
-			end    += corner_ne(to_slope) + corner_nw(to_slope);
+			start  += from_slope.sw_cnr() + from_slope.se_cnr();
+			middle += from_slope.ne_cnr() + from_slope.nw_cnr();
+			end    += to_slope.ne_cnr() + to_slope.nw_cnr();
 		}
 		else if(  dir == koord::east  ) {
-			start  += corner_sw(from_slope) + corner_nw(from_slope);
-			middle += corner_se(from_slope) + corner_ne(from_slope);
-			end    += corner_se(to_slope) + corner_ne(to_slope);
+			start  += from_slope.sw_cnr() + from_slope.nw_cnr();
+			middle += from_slope.se_cnr() + from_slope.ne_cnr();
+			end    += to_slope.se_cnr() + to_slope.ne_cnr();
 		}
 		else if(  dir == koord::south  ) {
-			start  += corner_ne(from_slope) + corner_nw(from_slope);
-			middle += corner_sw(from_slope) + corner_se(from_slope);
-			end    += corner_sw(to_slope) + corner_se(to_slope);
+			start  += from_slope.ne_cnr() + from_slope.nw_cnr();
+			middle += from_slope.sw_cnr() + from_slope.se_cnr();
+			end    += to_slope.sw_cnr() + to_slope.se_cnr();
 		}
 		else if(  dir == koord::west  ) {
-			start  += corner_se(from_slope) + corner_ne(from_slope);
-			middle += corner_sw(from_slope) + corner_nw(from_slope);
-			end    += corner_sw(to_slope) + corner_nw(to_slope);
+			start  += from_slope.se_cnr() + from_slope.ne_cnr();
+			middle += from_slope.sw_cnr() + from_slope.nw_cnr();
+			end    += to_slope.sw_cnr() + to_slope.nw_cnr();
 		}
 		// work out intermediate height:
 		if(  end == start  ) {
@@ -1150,7 +1150,7 @@ bool way_builder_t::check_terraforming( const grund_t *from, const grund_t *to, 
 		else {
 			//  end < start   to is way?assert from is_way:middle = end + 1
 			//  end > start   to is way?assert from is_way:middle = end - 1
-			if(  !old_slope_t::is_way(to_slope )  ) {
+			if(  !to_slope.allows_way()  ) {
 				middle = (start + end) / 2;
 			}
 		}
@@ -1172,20 +1172,20 @@ bool way_builder_t::check_terraforming( const grund_t *from, const grund_t *to, 
 
 		// write middle heights
 		if(  dir == koord::north  ) {
-			*new_from_slope = encode_corners(corner_sw(from_slope), corner_se(from_slope), m_from, m_from);
-			*new_to_slope =   encode_corners(m_to, m_to, corner_ne(to_slope), corner_nw(to_slope));
+			*new_from_slope = slope_t(from_slope.sw_cnr(), from_slope.se_cnr(), m_from, m_from);
+			*new_to_slope =   slope_t(m_to, m_to, to_slope.ne_cnr(), to_slope.nw_cnr());
 		}
 		else if(  dir == koord::east  ) {
-			*new_from_slope = encode_corners(corner_sw(from_slope), m_from, m_from, corner_nw(from_slope));
-			*new_to_slope =   encode_corners(m_to, corner_se(to_slope), corner_ne(to_slope), m_to);
+			*new_from_slope = slope_t(from_slope.sw_cnr(), m_from, m_from, from_slope.nw_cnr());
+			*new_to_slope =   slope_t(m_to, to_slope.se_cnr(), to_slope.ne_cnr(), m_to);
 		}
 		else if(  dir == koord::south  ) {
-			*new_from_slope = encode_corners(m_from, m_from, corner_ne(from_slope), corner_nw(from_slope));
-			*new_to_slope =   encode_corners(corner_sw(to_slope), corner_se(to_slope), m_to, m_to);
+			*new_from_slope = slope_t(m_from, m_from, from_slope.ne_cnr(), from_slope.nw_cnr());
+			*new_to_slope =   slope_t(to_slope.sw_cnr(), to_slope.se_cnr(), m_to, m_to);
 		}
 		else if(  dir == koord::west  ) {
-			*new_from_slope = encode_corners(m_from, corner_se(from_slope), corner_ne(from_slope), m_from);
-			*new_to_slope =   encode_corners(corner_sw(to_slope), m_to, m_to, corner_nw(to_slope));
+			*new_from_slope = slope_t(m_from, from_slope.se_cnr(), from_slope.ne_cnr(), m_from);
+			*new_to_slope =   slope_t(to_slope.sw_cnr(), m_to, m_to, to_slope.nw_cnr());
 		}
 		return true;
 	}
@@ -1198,32 +1198,32 @@ void way_builder_t::do_terraforming()
 
 	FOR(vector_tpl<uint32>, const i, terraform_index) { // index in route
 		grund_t *from = welt->lookup(route[i]);
-		uint8 from_slope = from->get_grund_hang();
+		slope_t from_slope = from->get_grund_hang();
 
 		grund_t *to = welt->lookup(route[i+1]);
-		uint8 to_slope = to->get_grund_hang();
+		slope_t to_slope = to->get_grund_hang();
 		// calculate new slopes
 		check_terraforming(from, to, &from_slope, &to_slope);
 		bool changed = false;
 		// change slope of from
 		if(  from_slope != from->get_grund_hang()  ) {
-			if(from_slope == old_slope_t::all_up_two  ) {
+			if(from_slope == slope_t(slope_t::all_up_two)  ) {
 				from->set_hoehe( from->get_hoehe() + 2 );
-				from->set_grund_hang(old_slope_t::flat );
+				from->set_grund_hang(slope_t());
 				route[i].z = from->get_hoehe();
 			}
-			else if(from_slope != old_slope_t::all_up_one  ) {
+			else if(from_slope.get_value() != slope_t::all_up_one) {
 				// bit of a hack to recognise single height slopes shifted up 1
-				if(from_slope > old_slope_t::all_up_one && old_slope_t::is_single(from_slope - old_slope_t::all_up_one )  ) {
+				if(from_slope.get_value() > slope_t::all_up_one && slope_t(from_slope.get_value() - slope_t::all_up_one).is_single() ) {
 					from->set_hoehe( from->get_hoehe() + 1 );
-					from_slope -= old_slope_t::all_up_one;
+					from_slope = slope_t(from_slope.get_value() - slope_t::all_up_one);
 					route[i].z = from->get_hoehe();
 				}
 				from->set_grund_hang( from_slope );
 			}
 			else {
 				from->set_hoehe( from->get_hoehe() + 1 );
-				from->set_grund_hang(old_slope_t::flat );
+				from->set_grund_hang(slope_t());
 				route[i].z = from->get_hoehe();
 			}
 			changed = true;
@@ -1234,23 +1234,23 @@ void way_builder_t::do_terraforming()
 		}
 		// change slope of to
 		if(  to_slope != to->get_grund_hang()  ) {
-			if(to_slope == old_slope_t::all_up_two  ) {
+			if(to_slope == slope_t(slope_t::all_up_two)) {
 				to->set_hoehe( to->get_hoehe() + 2 );
-				to->set_grund_hang(old_slope_t::flat );
+				to->set_grund_hang(slope_t() );
 				route[i + 1].z = to->get_hoehe();
 			}
-			else if(to_slope != old_slope_t::all_up_one  ) {
+			else if(to_slope != slope_t(slope_t::all_up_one)  ) {
 				// bit of a hack to recognise single height slopes shifted up 1
-				if(to_slope > old_slope_t::all_up_one && old_slope_t::is_single(to_slope - old_slope_t::all_up_one )  ) {
+				if(to_slope.get_value() > slope_t::all_up_one && slope_t(to_slope.get_value() - slope_t::all_up_one ).is_single()) {
 					to->set_hoehe( to->get_hoehe() + 1 );
-					to_slope -= old_slope_t::all_up_one;
+					to_slope -= slope_t(slope_t::all_up_one);
 					route[i + 1].z = to->get_hoehe();
 				}
 				to->set_grund_hang(to_slope);
 			}
 			else {
 				to->set_hoehe( to->get_hoehe() + 1);
-				to->set_grund_hang(old_slope_t::flat);
+				to->set_grund_hang(slope_t());
 				route[i+1].z = to->get_hoehe();
 			}
 			changed = true;
@@ -1277,7 +1277,7 @@ void way_builder_t::do_terraforming()
 void way_builder_t::check_for_bridge(const grund_t* parent_from, const grund_t* from, const vector_tpl<koord3d> &ziel)
 {
 	// wrong starting slope or tile already occupied with a way ...
-	if (!old_slope_t::is_way(from->get_grund_hang())) {
+	if (!from->get_grund_hang().allows_way()) {
 		return;
 	}
 
@@ -1355,9 +1355,9 @@ void way_builder_t::check_for_bridge(const grund_t* parent_from, const grund_t* 
 			uint32 length = koord_distance(from->get_pos(), end);
 			if(!ziel.is_contained(end)  &&  bridge_builder_t::can_place_ramp(player_builder, gr_end, desc->get_wtyp(), ribi_type(zv))) {
 				// If there is a slope on the starting tile, it's taken into account in is_allowed_step, but a bridge will be flat!
-				sint8 num_slopes = (from->get_grund_hang() == old_slope_t::flat) ? 1 : -1;
+				sint8 num_slopes = (from->get_grund_hang().is_flat()) ? 1 : -1;
 				// On the end tile, we haven't to subtract way_count_slope, since is_allowed_step isn't called with this tile.
-				num_slopes += (gr_end->get_grund_hang() == old_slope_t::flat) ? 1 : 0;
+				num_slopes += (gr_end->get_grund_hang().is_flat()) ? 1 : 0;
 				next_gr.append(next_gr_t(welt->lookup(end), length * cost_difference + num_slopes*welt->get_settings().way_count_slope, build_straight | build_tunnel_bridge));
 				min_length = length+1;
 			}
@@ -1591,7 +1591,7 @@ DBG_DEBUG("insert to close","(%i,%i,%i)  f=%i",gr->get_pos().x,gr->get_pos().y,g
 		// test directions
 		// .. use only those that are allowed by current slope
 		// .. do not go backward
-		const ribi_t::ribi slope_dir = (old_slope_t::is_way_ns(gr->get_weg_hang()) ? ribi_t::northsouth : ribi_t::none) | (old_slope_t::is_way_ew(gr->get_weg_hang()) ? ribi_t::eastwest : ribi_t::none);
+		const ribi_t::ribi slope_dir = (gr->get_weg_hang().allows_way_ns() ? ribi_t::northsouth : ribi_t::none) | (gr->get_weg_hang().allows_way_ew() ? ribi_t::eastwest : ribi_t::none);
 		const ribi_t::ribi test_dir = (tmp->count & build_straight)==0  ?  slope_dir  & ~ribi_t::backward(straight_dir)
 		                                                                :  straight_dir;
 
@@ -1823,7 +1823,7 @@ void way_builder_t::intern_calc_straight_route(const koord3d start, const koord3
 			bool bd_von_new = false, bd_nach_new = false;
 			grund_t *bd_von = welt->lookup(pos);
 			if(  bd_von == NULL ) {
-				bd_von = new tunnelboden_t(pos, old_slope_t::flat);
+				bd_von = new tunnelboden_t(pos, slope_t());
 				bd_von_new = true;
 			}
 			// take care of slopes
@@ -1837,13 +1837,13 @@ void way_builder_t::intern_calc_straight_route(const koord3d start, const koord3
 				if(  !bd_nach  ) {
 					bd_nach = welt->lookup(pos + diff + koord3d(0,0,-2));
 				}
-				if(  bd_nach  && bd_nach->get_weg_hang() == old_slope_t::flat  ) {
+				if(  bd_nach  && bd_nach->get_weg_hang().is_flat()  ) {
 					// Don't care about _flat_ tunnels below.
 					bd_nach = NULL;
 				}
 			}
 			if(  bd_nach == NULL  ){
-				bd_nach = new tunnelboden_t(pos + diff, old_slope_t::flat);
+				bd_nach = new tunnelboden_t(pos + diff, slope_t());
 				bd_nach_new = true;
 			}
 			// check for tunnel and right slope
@@ -2052,7 +2052,7 @@ uint32 ms = dr_time();
 		else {
 			intern_calc_route( ziel, start );
 		}
-		while (route.get_count()>1 && welt->lookup(route[0])->get_grund_hang() == old_slope_t::flat && welt->lookup(route[1])->is_water()) {
+		while (route.get_count()>1 && welt->lookup(route[0])->get_grund_hang().is_flat() && welt->lookup(route[1])->is_water()) {
 			// remove leading water ...
 			route.remove_at(0);
 		}
@@ -2144,9 +2144,9 @@ void way_builder_t::build_tunnel_and_bridges()
 				// Here is already a tunnel or a bridge.
 				continue;
 			}
-			old_slope_t::type h = gr_i->get_weg_hang();
+			slope_t h = gr_i->get_weg_hang();
 			waytype_t const wt = desc->get_wtyp();
-			if(h != old_slope_t::flat && old_slope_t::opposite(h) == gr_i1->get_weg_hang()) {
+			if(!h.is_flat() && h.opposite() == gr_i1->get_weg_hang()) {
 				// either a short mountain or a short dip ...
 				// now: check ownership
 				weg_t *wi = gr_i->get_weg(wt);
@@ -2157,13 +2157,13 @@ void way_builder_t::build_tunnel_and_bridges()
 						// its a bridge
 						if( bridge_desc ) {
 							wi->set_ribi(ribi_type(h));
-							wi1->set_ribi(ribi_type(old_slope_t::opposite(h)));
+							wi1->set_ribi(ribi_type(h.opposite()));
 							bridge_builder_t::build( player_builder, route[i], bridge_desc, overtaking_mode);
 						}
 					}
 					else if( tunnel_desc ) {
 						// make a short tunnel
-						wi->set_ribi(ribi_type(old_slope_t::opposite(h)));
+						wi->set_ribi(ribi_type(h.opposite()));
 						wi1->set_ribi(ribi_type(h));
 						tunnel_builder_t::build( player_builder, route[i].get_2d(), tunnel_desc, true, overtaking_mode, desc);
 					}
@@ -2201,10 +2201,10 @@ sint64 way_builder_t::calc_costs()
 
 	FOR(vector_tpl<uint32>, const i, terraform_index) { // index in route
 		grund_t *from = welt->lookup(route[i]);
-		uint8 from_slope = from->get_grund_hang();
+		slope_t from_slope = from->get_grund_hang();
 
 		grund_t *to = welt->lookup(route[i+1]);
-		uint8 to_slope = to->get_grund_hang();
+		slope_t to_slope = to->get_grund_hang();
 		// calculate new slopes
 		check_terraforming(from, to, &from_slope, &to_slope);
 		// change slope of from
@@ -2378,7 +2378,7 @@ bool way_builder_t::build_tunnel_tile()
 
 		if(gr==NULL) {
 			// make new tunnelboden
-			tunnelboden_t* tunnel = new tunnelboden_t(route[i], 0);
+			tunnelboden_t* tunnel = new tunnelboden_t(route[i], slope_t());
 			welt->access(route[i].get_2d())->boden_hinzufuegen(tunnel);
 			if(tunnel_desc->get_waytype()!=powerline_wt) {
 				weg_t *weg = weg_t::alloc(tunnel_desc->get_waytype());
@@ -2391,10 +2391,10 @@ bool way_builder_t::build_tunnel_tile()
 					str->set_overtaking_mode(overtaking_mode, player_builder);
 					update_ribi_mask_oneway(str,i);
 				}
-				const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
-				if(hang != old_slope_t::flat)
+				const slope_t hang = gr ? gr->get_weg_hang() : slope_t();
+				if(!hang.is_flat())
 				{
-					const uint slope_height = (hang & 7) ? 1 : 2;
+					const uint slope_height = hang.is_all_up() ? 1 : 2;
 					if(slope_height == 1)
 					{
 						weg->set_max_speed(min(desc->get_topspeed_gradient_1(), tunnel_desc->get_topspeed_gradient_1()));
@@ -2475,10 +2475,10 @@ bool way_builder_t::build_tunnel_tile()
 				if (weg)
 				{
 					weg->set_desc(desc);
-					const old_slope_t::type hang = gr->get_weg_hang();
-					if (hang != old_slope_t::flat)
+					const slope_t hang = gr->get_weg_hang();
+					if (!hang.is_flat())
 					{
-						const uint slope_height = (hang & 7) ? 1 : 2;
+						const uint slope_height = hang.is_all_up() ? 1 : 2;
 						if (slope_height == 1)
 						{
 							weg->set_max_speed(min(desc->get_topspeed_gradient_1(), tunnel_desc->get_topspeed_gradient_1()));
@@ -2522,7 +2522,7 @@ void way_builder_t::build_elevated()
 		grund_t* const gr  = plan->get_boden_in_hoehe(i.z);
 
 		if(gr==NULL) {
-			old_slope_t::type hang = gr0 ? gr0->get_grund_hang() : 0;
+			slope_t hang = gr0 ? gr0->get_grund_hang() : slope_t();
 			// add new elevated ground
 			monorailboden_t* const monorail = new monorailboden_t(i, hang);
 			plan->boden_hinzufuegen(monorail);
@@ -2910,7 +2910,7 @@ class fluss_test_driver_t : public test_driver_t
 	virtual ribi_t::ribi get_ribi(const grund_t* gr) const { return gr->get_weg_ribi_unmasked(water_wt); }
 	virtual waytype_t get_waytype() const { return invalid_wt; }
 	virtual int get_cost(const grund_t *, const sint32, koord) { return 1; }
-	virtual bool is_target(const grund_t *cur,const grund_t *) { return cur->is_water()  && cur->get_grund_hang() == old_slope_t::flat; }
+	virtual bool is_target(const grund_t *cur,const grund_t *) { return cur->is_water()  && cur->get_grund_hang().is_flat(); }
 };
 
 

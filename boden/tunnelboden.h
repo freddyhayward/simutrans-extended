@@ -17,11 +17,11 @@ protected:
 
 public:
 	tunnelboden_t(loadsave_t *file, koord pos );
-	tunnelboden_t(koord3d pos, old_slope_t::type slope_type) : boden_t(pos, slope_type) {}
+	tunnelboden_t(koord3d pos, slope_t slope_type) : boden_t(pos, slope_type) {}
 
 	virtual void rdwr(loadsave_t *file) OVERRIDE;
 
-	old_slope_t::type get_weg_hang() const OVERRIDE { return ist_karten_boden() ? (old_slope_t::type)old_slope_t::flat : get_grund_hang(); }
+	slope_t get_weg_hang() const OVERRIDE { return ist_karten_boden() ? slope_t() : get_grund_hang(); }
 
 	const char *get_name() const OVERRIDE {return "Tunnelboden";}
 	typ get_typ() const OVERRIDE { return tunnelboden; }

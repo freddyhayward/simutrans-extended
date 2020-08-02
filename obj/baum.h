@@ -48,7 +48,7 @@ private:
 	/**
 	 * calculate offsets for new trees
 	 */
-	void calc_off(uint8 slope, sint8 x=-128, sint8 y=-128);
+	void calc_off(slope_t slope, sint8 x=-128, sint8 y=-128);
 
 	static uint16 random_tree_for_climate_intern(climate cl);
 
@@ -61,7 +61,7 @@ public:
 	 */
 	baum_t(loadsave_t *file);
 	baum_t(koord3d pos);
-	baum_t(koord3d pos, uint8 type, sint32 age, uint8 slope );
+	baum_t(koord3d pos, uint8 type, sint32 age, slope_t slope );
 	baum_t(koord3d pos, const tree_desc_t *desc);
 
 	void rdwr(loadsave_t *file);

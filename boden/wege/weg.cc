@@ -181,7 +181,7 @@ void weg_t::set_desc(const way_desc_t *b, bool from_saved_game)
 	}
 	const bruecke_t *bridge = gr ? gr->find<bruecke_t>() : NULL;
 	const tunnel_t *tunnel = gr ? gr->find<tunnel_t>() : NULL;
-	const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
+	const slope_t hang = gr ? gr->get_weg_hang() : slope_t();
 
 #ifdef MULTI_THREAD_CONVOYS
 	if (env_t::networkmode)
@@ -206,9 +206,9 @@ void weg_t::set_desc(const way_desc_t *b, bool from_saved_game)
 		}
 	}
 
-	if(hang != old_slope_t::flat)
+	if(!hang.is_flat())
 	{
-		const uint slope_height = (hang & 7) ? 1 : 2;
+		const uint slope_height = hang.is_one_high() ? 1 : 2;
 		if(slope_height == 1)
 		{
 			if(bridge)
@@ -1318,8 +1318,8 @@ void weg_t::set_images(image_type typ, uint8 ribi, bool snow, bool switch_nw)
 			set_after_image( desc->get_image_id( ribi, snow, true ) );
 			break;
 		case image_slope:
-			set_image( desc->get_slope_image_id((old_slope_t::type)ribi, snow ) );
-			set_after_image( desc->get_slope_image_id((old_slope_t::type)ribi, snow, true ) );
+			set_image( desc->get_slope_image_id(slope_t(ribi), snow ) );
+			set_after_image( desc->get_slope_image_id(slope_t(ribi), snow, true ) );
 			break;
 		case image_switch:
 			set_image( desc->get_image_nr_switch(ribi, snow, switch_nw) );
@@ -1361,9 +1361,9 @@ bool weg_t::check_season(const bool calc_only_season_change)
 		flags |= IS_SNOW;
 	}
 
-	old_slope_t::type hang = from->get_weg_hang();
-	if(hang != old_slope_t::flat  ) {
-		set_images( image_slope, hang, snow );
+	slope_t hang = from->get_weg_hang();
+	if(!hang.is_flat()  ) {
+		set_images( image_slope, hang.get_value(), snow );
 		return true;
 	}
 
@@ -1473,14 +1473,14 @@ void weg_t::calc_image()
 			}
 		}
 
-		old_slope_t::type hang = from->get_weg_hang();
-		if(hang != old_slope_t::flat) {
+		slope_t hang = from->get_weg_hang();
+		if(!hang.is_flat()) {
 			// on slope
 			if(bridge_has_own_way_graphics){
 				set_image(IMG_EMPTY);
 				set_after_image(IMG_EMPTY);
 			}else{
-				set_images(image_slope, hang, snow);
+				set_images(image_slope, hang.get_value(), snow);
 			}
 		}
 

@@ -41,9 +41,9 @@ static pthread_mutex_t senke_list_mutex = PTHREAD_MUTEX_INITIALIZER;
  */
 ribi_t::ribi get_powerline_ribi(grund_t *gr)
 {
-	old_slope_t::type slope = gr->get_weg_hang();
+	slope_t slope = gr->get_weg_hang();
 	ribi_t::ribi ribi = (ribi_t::ribi)ribi_t::all;
-	if (slope == old_slope_t::flat) {
+	if (slope.is_flat()) {
 		// respect possible directions for bridge and tunnel starts
 		if (gr->ist_karten_boden()  &&  (gr->ist_tunnel()  ||  gr->ist_bruecke())) {
 			ribi = ribi_t::doubles( ribi_type( gr->get_grund_hang() ) );
@@ -309,8 +309,8 @@ void leitung_t::calc_image()
 	}
 
 	image_id old_image = get_image();
-	old_slope_t::type hang = gr->get_weg_hang();
-	if(hang != old_slope_t::flat) {
+	slope_t hang = gr->get_weg_hang();
+	if(!hang.is_flat()) {
 		set_image( desc->get_slope_image_id(hang, snow));
 	}
 	else {

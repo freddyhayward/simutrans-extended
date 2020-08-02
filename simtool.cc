@@ -1267,7 +1267,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 				ribis |= gr1->get_leitung()->get_ribi();
 			}
 
-			if(  new_slope==RESTORE_SLOPE  ||  !ribi_t::is_single(ribis)  ||  (new_slope < old_slope_t::max_number && ribi_t::backward(ribi_type(new_slope)) != ribis)  ) {
+			if(  new_slope==RESTORE_SLOPE  ||  !ribi_t::is_single(ribis)  ||  (slope_t(new_slope).get_value() < slope_t::max_number && ribi_t::backward(ribi_type(slope_t(new_slope))) != ribis)  ) {
 				// has the wrong tilt
 				return NOTICE_TILE_FULL;
 			}
@@ -1276,8 +1276,8 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 			 * a slope with the way as hinge.
 			 */
 			if(  new_slope==ALL_UP_SLOPE  ) {
-				if(gr1->get_weg_hang() == old_slope_t::flat  ) {
-					new_slope = slope_type(ribis);
+				if(gr1->get_weg_hang().is_flat()  ) {
+					new_slope = slope_type(ribis).get_value();
 				}
 				else if(  gr1->get_weg_hang() == slope_type(ribis)  ) {
 					// check that way_desc supports such steep slopes
@@ -1286,14 +1286,14 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 					  ||  (gr1->get_leitung()  &&  !gr1->get_leitung()->get_desc()->has_double_slopes())  ) {
 						return NOTICE_TILE_FULL;
 					}
-					new_slope = slope_type(ribis) * 2;
+					new_slope = slope_type(ribis).get_value() * 2;
 				}
-				else if(  gr1->get_weg_hang() == slope_type( ribi_t::backward(ribis) ) * 2  ) {
+				else if(  gr1->get_weg_hang() == slope_type( ribi_t::backward(ribis)).doubled()  ) {
 					new_pos.z++;
 					if(  welt->lookup(new_pos)  ) {
 						return NOTICE_TILE_FULL;
 					}
-					new_slope = slope_type( ribi_t::backward(ribis) );
+					new_slope = slope_type( ribi_t::backward(ribis) ).get_value();
 				}
 				else if(  gr1->get_weg_hang() != slope_type( ribi_t::backward(ribis) )  ) {
 					return "Maximum tile height difference reached.";
@@ -1306,14 +1306,14 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 						return NOTICE_TILE_FULL;
 					}
 				}
-				else if(  gr1->get_grund_hang() == slope_type(ribis) * 2  ) {
+				else if(  gr1->get_grund_hang() == slope_type(ribis).doubled()  ) {
 					if(  pos.z == water_hgt  &&  !gr1->ist_tunnel()  ) {
 						return NOTICE_TILE_FULL;
 					}
-					new_slope = slope_type(ribis);
+					new_slope = slope_type(ribis).get_value();
 				}
-				else if(gr1->get_grund_hang() == old_slope_t::flat  ) {
-					new_slope = slope_type( ribi_t::backward(ribis) );
+				else if(gr1->get_grund_hang().is_flat()  ) {
+					new_slope = slope_type( ribi_t::backward(ribis) ).get_value();
 					new_pos.z--;
 					if(  welt->lookup(new_pos)  ) {
 						return NOTICE_TILE_FULL;
@@ -1326,7 +1326,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 					  ||  (gr1->get_leitung()  &&  !gr1->get_leitung()->get_desc()->has_double_slopes())  ) {
 						return NOTICE_TILE_FULL;
 					}
-					new_slope = slope_type( ribi_t::backward(ribis) ) * 2;
+					new_slope = slope_type( ribi_t::backward(ribis) ).doubled().get_value();
 					new_pos.z--;
 					if(  welt->lookup(new_pos)  ) {
 						return NOTICE_TILE_FULL;
@@ -1342,20 +1342,20 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 			if(  new_slope == RESTORE_SLOPE  ) {
 				// prissi: special action: set to natural slope
 				sint8 min_hgt;
-				new_slope = welt->recalc_natural_slope( k, min_hgt );
+				new_slope = welt->recalc_natural_slope( k, min_hgt ).get_value();
 				new_pos = koord3d( k, min_hgt );
 				DBG_MESSAGE("natural_slope","%i",new_slope);
 			}
 			else {
-				new_slope = old_slope_t::flat;
+				new_slope = slope_t::flat;
 				// is more intuitive: if there is a slope, first downgrade it
-				if(  gr1->get_grund_hang() == 0  ) {
+				if(  gr1->get_grund_hang().is_flat()  ) {
 					new_pos.z--;
 				}
 			}
 
 			// now prevent being lowered below neighbouring water
-			sint8 water_table = (water_hgt >= (gr1->get_hoehe() + (gr1->get_grund_hang() ? 1 : 0))) ? water_hgt : welt->get_groundwater() - 4;
+			sint8 water_table = (water_hgt >= (gr1->get_hoehe() + (!gr1->get_grund_hang().is_flat() ? 1 : 0))) ? water_hgt : welt->get_groundwater() - 4;
 			sint8 min_neighbour_height = gr1->get_hoehe();
 
 			for(  sint16 i = 0 ;  i < 8 ;  i++  ) {
@@ -1364,7 +1364,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 				if(  welt->is_within_grid_limits( neighbour )  ) {
 					grund_t *gr2 = welt->lookup_kartenboden( neighbour );
 					const sint8 water_hgt_neighbour = welt->get_water_hgt( neighbour );
-					if(  gr2  &&  (water_hgt_neighbour >= (gr2->get_hoehe() + (gr2->get_grund_hang() ? 1 : 0)))  ) {
+					if(  gr2  &&  (water_hgt_neighbour >= (gr2->get_hoehe() + (!gr2->get_grund_hang().is_flat() ? 1 : 0)))  ) {
 						water_table = max( water_table, water_hgt_neighbour );
 					}
 					if(  gr2  &&  gr2->get_hoehe() < min_neighbour_height  ) {
@@ -1381,7 +1381,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 			water_hgt = water_table;
 		}
 		else if(  new_slope == ALL_UP_SLOPE  ) {
-			new_slope = old_slope_t::flat;
+			new_slope = slope_t::flat;
 			new_pos.z++;
 		}
 
@@ -1399,7 +1399,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 				gr2 = welt->lookup( new_pos + koord3d(0, 0, 3) );
 			}
 			// slope may alter amount of clearance required
-			if(  gr2  && gr2->get_pos().z - new_pos.z + old_slope_t::min_diff(gr2->get_weg_hang(), new_slope ) < welt->get_settings().get_way_height_clearance()  ) {
+			if(  gr2  && gr2->get_pos().z - new_pos.z + slope_t::min_diff(gr2->get_weg_hang(), slope_t(new_slope)) < welt->get_settings().get_way_height_clearance()  ) {
 				return NOTICE_TILE_FULL;
 			}
 		}
@@ -1412,7 +1412,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 				gr2 = welt->lookup( new_pos + koord3d(0, 0, -3) );
 			}
 			// slope may alter amount of clearance required
-			if(  gr2  && new_pos.z - gr2->get_pos().z + old_slope_t::min_diff(new_slope, gr2->get_weg_hang() ) < welt->get_settings().get_way_height_clearance()  ) {
+			if(  gr2  && new_pos.z - gr2->get_pos().z + slope_t::min_diff(slope_t(new_slope), gr2->get_weg_hang()) < welt->get_settings().get_way_height_clearance()  ) {
 				return NOTICE_TILE_FULL;
 			}
 		}
@@ -1428,7 +1428,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 
 				const grund_t *gr_neighbour=welt->lookup_kartenboden(neighbour);
 				if(gr_neighbour) {
-					const sint16 gr_neighbour_hgt=gr_neighbour->get_hoehe() + (new_slope==ALL_DOWN_SLOPE && gr_neighbour->get_grund_hang()? 1 : 0);
+					const sint16 gr_neighbour_hgt=gr_neighbour->get_hoehe() + (new_slope==ALL_DOWN_SLOPE && !gr_neighbour->get_grund_hang().is_flat() ? 1 : 0);
 					const sint8 diff_from_ground = abs(gr_neighbour_hgt-test_hgt);
 					if(  diff_from_ground > 2 * max_hdiff  ) {
 						return "Maximum tile height difference reached.";
@@ -1439,7 +1439,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 
 		// ok, now we set the slope ...
 		ok = (new_pos!=pos);
-		bool slope_changed = new_slope!=gr1->get_grund_hang();
+		bool slope_changed = slope_t(new_slope) != gr1->get_grund_hang();
 		ok |= slope_changed;
 
 		if(ok) {
@@ -1470,12 +1470,12 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 					return NOTICE_TILE_FULL;
 				}
 				gr1->obj_loesche_alle(player);
-				welt->access(k)->kartenboden_setzen( new boden_t(new_pos,new_slope) );
+				welt->access(k)->kartenboden_setzen( new boden_t(new_pos,slope_t(new_slope)) );
 				gr1 = welt->lookup_kartenboden(k);
 				welt->set_water_hgt(k, welt->get_groundwater()-4);
 			}
 			else {
-				gr1->set_grund_hang(new_slope);
+				gr1->set_grund_hang(slope_t(new_slope));
 				gr1->set_pos(new_pos);
 				gr1->clear_flag(grund_t::marked);
 				gr1->set_flag(grund_t::dirty);
@@ -1508,7 +1508,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 			}
 
 			if(  gr1->ist_karten_boden()  ) {
-				if(new_slope != old_slope_t::flat  ) {
+				if(!slope_t(new_slope).is_flat()  ) {
 					// no lakes on slopes ...
 					groundobj_t *obj = gr1->find<groundobj_t>();
 					if(  obj  &&  obj->get_desc()->get_phases()!=16  ) {
@@ -1517,9 +1517,9 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 					}
 					// connect canals to sea
 					if(  gr1->get_hoehe() == water_hgt  &&  gr1->hat_weg(water_wt)  ) {
-						grund_t *sea = welt->lookup_kartenboden(k - koord( ribi_type(new_slope ) ));
+						grund_t *sea = welt->lookup_kartenboden(k - koord( ribi_type(slope_t(new_slope) ) ));
 						if (sea  &&  sea->is_water()) {
-							gr1->weg_erweitern(water_wt, ribi_t::backward(ribi_type(new_slope)));
+							gr1->weg_erweitern(water_wt, ribi_t::backward(ribi_type(slope_t(new_slope))));
 							sea->calc_image();
 						}
 					}
@@ -1537,7 +1537,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 					welt->set_grid_hgt(k, grid_hgt );
 				}
 				else {
-					welt->set_grid_hgt(k, gr1->get_hoehe()+ corner_nw(gr1->get_grund_hang()) );
+					welt->set_grid_hgt(k, gr1->get_hoehe() + gr1->get_grund_hang().nw_cnr() );
 				}
 				reliefkarte_t::get_karte()->calc_map_pixel(k);
 
@@ -1779,7 +1779,7 @@ const char *tool_transformer_t::work( player_t *player, koord3d pos )
 			return "Cannot built this station/building\nin underground mode here.";
 		}
 
-		tunnelboden_t* tunnel = new tunnelboden_t(pos, 0);
+		tunnelboden_t* tunnel = new tunnelboden_t(pos, slope_t());
 		welt->access(pos.get_2d())->boden_hinzufuegen(tunnel);
 		tunnel->obj_add(new tunnel_t(pos, player, tunnel_desc));
 		player_t::add_maintenance( player, tunnel_desc->get_maintenance(), tunnel_desc->get_finance_waytype() );
@@ -1787,7 +1787,7 @@ const char *tool_transformer_t::work( player_t *player, koord3d pos )
 	}
 	else {
 		// above ground: check for clear tile
-		if(gr->get_grund_hang()!=0  ||  !gr->ist_natur()) {
+		if(!gr->get_grund_hang().is_flat()  ||  !gr->ist_natur()) {
 			return "Transformer only on flat bare land!";
 		}
 		// remove everything on that spot
@@ -1846,7 +1846,7 @@ const char *tool_add_city_t::work( player_t *player, koord3d pos )
 	if(gr) {
 		if(gr->ist_natur() &&
 			!gr->is_water() &&
-			gr->get_grund_hang() == 0  &&
+			gr->get_grund_hang().is_flat()  &&
 			hausbauer_t::get_special( 0, building_desc_t::townhall, welt->get_timeline_year_month(), 0, welt->get_climate( k ), welt->get_region(k) ) != NULL  ) {
 
 			gebaeude_t const* const gb = obj_cast<gebaeude_t>(gr->first_obj());
@@ -1988,12 +1988,12 @@ void tool_set_climate_t::mark_tiles(player_t *, const koord3d &start, const koor
 
 			zeiger_t *marker = new zeiger_t(gr->get_pos(), NULL );
 
-			const uint8 grund_hang = gr->get_grund_hang();
-			const uint8 weg_hang = gr->get_weg_hang();
-			const uint8 hang = max( corner_sw(grund_hang), corner_sw(weg_hang) ) + 3 * max( corner_se(grund_hang), corner_se(weg_hang) ) + 9 * max( corner_ne(grund_hang), corner_ne(weg_hang) ) + 27 * max( corner_nw(grund_hang), corner_nw(weg_hang) );
-			uint8 back_hang = (hang % 3) + 3 * ((uint8)(hang / 9)) + 27;
-			marker->set_after_image( ground_desc_t::marker->get_image( grund_hang % 27 ) );
-			marker->set_image( ground_desc_t::marker->get_image( back_hang ) );
+			const slope_t grund_hang = gr->get_grund_hang();
+			const slope_t weg_hang = gr->get_weg_hang();
+            const slope_t combined_hang = slope_t::combined_max(grund_hang, weg_hang);
+			slope_t back_hang = slope_t((combined_hang.get_value() % 3) + 3 * ((combined_hang.get_value() / 9)) + 27);
+			marker->set_after_image( ground_desc_t::marker->get_image( grund_hang.get_value() % 27 ) );
+			marker->set_image( ground_desc_t::marker->get_image( back_hang.get_value() ) );
 
 			marker->mark_image_dirty( marker->get_image(), 0 );
 			gr->obj_add( marker );
@@ -2046,7 +2046,7 @@ const char *tool_set_climate_t::do_work( player_t *player, const koord3d &start,
 						n ++;
 					}
 				}
-				else if(!gr->is_water() && gr->get_grund_hang() == old_slope_t::flat && welt->is_plan_height_changeable(k.x, k.y )  ) {
+				else if(!gr->is_water() && gr->get_grund_hang().is_flat() && welt->is_plan_height_changeable(k.x, k.y )  ) {
 					bool ok = true;
 					for(  int i = 0 ;  i < 8;  i++  ) {
 						grund_t *gr2 = welt->lookup_kartenboden( k + koord::neighbours[i] );
@@ -2107,8 +2107,7 @@ const char *tool_change_water_height_t::work( player_t *, koord3d pos )
 	}
 	// if not water then raise = set water height to ground height, lower = error
 	else if(  raising  ) {
-		old_slope_t::type slope = gr->get_grund_hang();
-		new_water_height = gr->get_hoehe() + max( max( corner_sw(slope), corner_se(slope) ),max( corner_ne(slope), corner_nw(slope) ) );
+		new_water_height = gr->get_hoehe() + gr->get_grund_hang().max_cnr_hgt();
 	}
 	else {
 		return "Cannot alter water";
@@ -2177,7 +2176,7 @@ const char *tool_change_water_height_t::work( player_t *, koord3d pos )
 					// n (i = 7), test sw (corner 0) and se (corner 1)
 
 					if(  is_ctrl_pressed()  ) {
-						ok = ok  &&  ((gr2->get_grund_hang() != old_slope_t::flat && welt->max_hgt(k_neighbour) <= test_height) ||
+						ok = ok  &&  ((gr2->get_grund_hang().is_flat() && welt->max_hgt(k_neighbour) <= test_height) ||
 							neighbour_heights[i][((i >> 1) + 1) & 3] < test_height ||
                                       ( (i & 1)  &&  neighbour_heights[i][((i >> 1) + 2) & 3] < test_height) );
 					}
@@ -2251,18 +2250,18 @@ const char *tool_change_water_height_t::work( player_t *, koord3d pos )
 					if(  !gr2->is_water()  ) {
 						// while this appears to be a single height slope actually it is a double height slope half underwater
 						const sint8 water_hgt = welt->get_water_hgt(x, y);
-						h0_nw >= water_hgt ? h0_nw = h0 + corner_nw( gr2->get_grund_hang() ) : 0;
-						h0_ne >= water_hgt ? h0_ne = h0 + corner_ne( gr2->get_grund_hang() ) : 0;
-						h0_se >= water_hgt ? h0_se = h0 + corner_se( gr2->get_grund_hang() ) : 0;
-						h0_sw >= water_hgt ? h0_sw = h0 + corner_sw( gr2->get_grund_hang() ) : 0;
+						h0_nw >= water_hgt ? h0_nw = h0 + gr2->get_grund_hang().nw_cnr() : 0;
+						h0_ne >= water_hgt ? h0_ne = h0 + gr2->get_grund_hang().ne_cnr() : 0;
+						h0_se >= water_hgt ? h0_se = h0 + gr2->get_grund_hang().se_cnr() : 0;
+						h0_sw >= water_hgt ? h0_sw = h0 + gr2->get_grund_hang().sw_cnr() : 0;
 					}
 				}
 				else {
 					// fully land
-					h0_nw = h0 + corner_nw( gr2->get_grund_hang() );
-					h0_ne = h0 + corner_ne( gr2->get_grund_hang() );
-					h0_se = h0 + corner_se( gr2->get_grund_hang() );
-					h0_sw = h0 + corner_sw( gr2->get_grund_hang() );
+					h0_nw = h0 + gr2->get_grund_hang().nw_cnr();
+					h0_ne = h0 + gr2->get_grund_hang().ne_cnr();
+					h0_se = h0 + gr2->get_grund_hang().se_cnr();
+					h0_sw = h0 + gr2->get_grund_hang().sw_cnr();
 				}
 
 
@@ -2274,8 +2273,8 @@ const char *tool_change_water_height_t::work( player_t *, koord3d pos )
 
 				gr2->set_hoehe( hneu );
 
-				const uint8 sneu = (hneu_sw - hneu > 2 ? 2 : hneu_sw - hneu) + ((hneu_se - hneu > 2 ? 2 : hneu_se-hneu) * 3) + ((hneu_ne - hneu > 2 ? 2 : hneu_ne - hneu) * 9) + ((hneu_nw - hneu > 2 ? 2 : hneu_nw - hneu) * 27);
-				gr2->set_grund_hang( sneu );
+				const slope_t sneu = slope_t(hneu_sw - hneu > 2 ? 2 : hneu_sw - hneu, hneu_se - hneu > 2 ? 2 : hneu_se-hneu, hneu_ne - hneu > 2 ? 2 : hneu_ne - hneu, hneu_nw - hneu > 2 ? 2 : hneu_nw - hneu);
+				gr2->set_grund_hang(sneu);
 
 				welt->set_water_hgt(x, y, new_water_height );
 				welt->access(x, y)->correct_water();
@@ -2582,7 +2581,7 @@ uint8 tool_build_way_t::is_valid_pos( player_t *player, const koord3d &pos, cons
 	error = NULL;
 	grund_t *gr=welt->lookup(pos);
 	uint8 positive_return = 2;
-	if(gr && old_slope_t::is_way(gr->get_weg_hang())  )
+	if(gr && gr->get_weg_hang().allows_way())
 	{
 		// Check for the runway exclusion zone (unless we are underground)
 		const uint8 height = welt->lookup_hgt(pos.get_2d());
@@ -2816,7 +2815,7 @@ void tool_build_way_t::mark_tiles(  player_t *player, const koord3d &start, cons
 			koord3d pos = bauigel.get_route()[j] + koord3d(0,0,offset);
 			grund_t *gr = welt->lookup( pos );
 			if( !gr ) {
-				gr = new monorailboden_t(pos, 0);
+				gr = new monorailboden_t(pos, slope_t());
 				// should only be here when elevated/monorail, therefore will be at height offset above ground
 				gr->set_grund_hang( welt->lookup( pos - koord3d( 0, 0, offset ) )->get_grund_hang() );
 				welt->access(pos.get_2d())->boden_hinzufuegen(gr);
@@ -2824,7 +2823,7 @@ void tool_build_way_t::mark_tiles(  player_t *player, const koord3d &start, cons
 			ribi_t::ribi zeige = gr->get_weg_ribi_unmasked(desc->get_wtyp()) | bauigel.get_route().get_ribi( j );
 
 			zeiger_t *way = new zeiger_t(pos, NULL );
-			if(gr->get_weg_hang()) {
+			if(!gr->get_weg_hang().is_flat()) {
 				way->set_image( desc->get_slope_image_id(gr->get_weg_hang(),0) );
 			}
 			else if(desc->get_wtyp()!=powerline_wt  &&  ribi_t::is_bend(zeige)  &&  desc->has_diagonal_image()) {
@@ -3031,17 +3030,17 @@ void tool_build_bridge_t::mark_tiles(  player_t *player, const koord3d &start, c
 	// flat -> height is 1 if conversion factor 1, 2 if conversion factor 2
 	// single height -> height is 1
 	// double height -> height is 2
-	const old_slope_t::type slope = gr->get_grund_hang();
-	uint8 max_height = slope ? old_slope_t::max_diff(slope) : bridge_height;
+	const slope_t slope = gr->get_grund_hang();
+	uint8 max_height = slope.is_flat() ? slope.max_diff() : bridge_height;
 
 	zeiger_t *way = new zeiger_t(start, player );
-	const bridge_desc_t::img_t img0 = desc->get_end( slope, slope, slope_type(zv)*max_height );
+	const bridge_desc_t::img_t img0 = desc->get_end( slope, slope, slope_t(slope_type(zv).get_value()*max_height) );
 
 	gr->obj_add( way );
 	way->set_image( desc->get_background( img0, 0 ) );
 	way->set_after_image( desc->get_foreground( img0, 0 ) );
 
-	if(  gr->get_grund_hang() != 0  ) {
+	if(  !gr->get_grund_hang().is_flat()  ) {
 		way->set_yoff( -TILE_HEIGHT_STEP * max_height );
 	}
 	// eventually we have to remove trees on start tile
@@ -3066,8 +3065,8 @@ void tool_build_bridge_t::mark_tiles(  player_t *player, const koord3d &start, c
 	while (pos.get_2d()!=end.get_2d()) {
 		grund_t *gr = welt->lookup( pos );
 		if( !gr ) {
-			gr = new monorailboden_t(pos, 0);
-			gr->set_grund_hang( 0 );
+			gr = new monorailboden_t(pos, slope_t());
+			gr->set_grund_hang( slope_t() );
 			welt->access(pos.get_2d())->boden_hinzufuegen(gr);
 		}
 		if (gr->is_water()) {
@@ -3077,8 +3076,8 @@ void tool_build_bridge_t::mark_tiles(  player_t *player, const koord3d &start, c
 		gr->obj_add( way );
 		grund_t *kb = welt->lookup_kartenboden(pos.get_2d());
 		sint16 height = pos.z - kb->get_pos().z;
-		way->set_image(desc->get_background(desc->get_straight(ribi_mark, height - old_slope_t::max_diff(kb->get_grund_hang())), 0));
-		way->set_after_image(desc->get_foreground(desc->get_straight(ribi_mark, height - old_slope_t::max_diff(kb->get_grund_hang())), 0));
+		way->set_image(desc->get_background(desc->get_straight(ribi_mark, height - kb->get_grund_hang().max_diff()), 0));
+		way->set_after_image(desc->get_foreground(desc->get_straight(ribi_mark, height - kb->get_grund_hang().max_diff()), 0));
 		marked.insert( way );
 		way->mark_image_dirty( way->get_image(), 0 );
 		if (desc->get_wtyp() == road_wt && get_overtaking_mode() <= oneway_mode) {
@@ -3094,16 +3093,16 @@ void tool_build_bridge_t::mark_tiles(  player_t *player, const koord3d &start, c
 	// flat -> height is 1 if conversion factor 1, 2 if conversion factor 2
 	// single height -> height is 1
 	// double height -> height is 2
-	const old_slope_t::type end_slope = gr->get_weg_hang();
-	const uint8 end_max_height = end_slope ? (is_one_high_old(end_slope) ? 1 : 2) : (pos.z - end.z);
+	const slope_t end_slope = gr->get_weg_hang();
+	const uint8 end_max_height = !end_slope.is_flat() ? (end_slope.is_one_high() ? 1 : 2) : (pos.z - end.z);
 
 	if(  gr->ist_karten_boden()  &&  end.z + end_max_height == start.z + max_height  ) {
 		zeiger_t *way = new zeiger_t(end, player );
-		const bridge_desc_t::img_t img1 = desc->get_end( end_slope, end_slope, end_slope?0:(pos.z-end.z)*slope_type(-zv) );
+		const bridge_desc_t::img_t img1 = desc->get_end( end_slope, end_slope, !end_slope.is_flat() ? slope_t() : slope_t((pos.z-end.z)*slope_type(-zv).get_value()) );
 		gr->obj_add( way );
 		way->set_image(desc->get_background(img1, 0));
 		way->set_after_image(desc->get_foreground(img1, 0));
-		if(  gr->get_grund_hang() != 0  ) {
+		if(  !gr->get_grund_hang().is_flat()  ) {
 			way->set_yoff( -TILE_HEIGHT_STEP * end_max_height );
 		}
 		marked.insert( way );
@@ -3148,7 +3147,7 @@ uint8 tool_build_bridge_t::is_valid_pos(  player_t *player, const koord3d &pos, 
 	}
 
 	grund_t *gr = welt->lookup(pos);
-	if(  gr==NULL || !old_slope_t::is_way(gr->get_grund_hang()) || !bridge_builder_t::can_place_ramp(player, gr, wt, (is_first_click() ? 0 : ribi_type(pos - start)) )  ) {
+	if(  gr==NULL || !gr->get_grund_hang().allows_way() || !bridge_builder_t::can_place_ramp(player, gr, wt, (is_first_click() ? 0 : ribi_type(pos - start)) )  ) {
 		return 0;
 	}
 
@@ -3200,7 +3199,7 @@ uint8 tool_build_bridge_t::is_valid_pos(  player_t *player, const koord3d &pos, 
 		ribi = ribi_t::backward(rw);
 		return (ribi!=ribi_t::none ? 2 : 0) | (ribi_t::is_single(ribi) ? 1 : 0);
 		} else {
-			if(  gr->get_weg_hang()  ) {
+			if(  !gr->get_weg_hang().is_flat()  ) {
 				return 0;
 			}
 
@@ -3483,13 +3482,13 @@ void tool_build_tunnel_t::mark_tiles(  player_t *player, const koord3d &start, c
 			grund_t *gr = welt->lookup(pos);
 			if( !gr ) {
 				// We need to create a dummy ground.
-				gr = new tunnelboden_t(pos, 0);
+				gr = new tunnelboden_t(pos, slope_t());
 				welt->access(pos.get_2d())->boden_hinzufuegen(gr);
 			}
 			ribi_t::ribi zeige = gr->get_weg_ribi_unmasked(wb->get_wtyp()) | bauigel.get_route().get_ribi( j );
 
 			zeiger_t *way = new zeiger_t(pos, player );
-			if(gr->get_weg_hang()) {
+			if(!gr->get_weg_hang().is_flat()) {
 				way->set_image( wb->get_slope_image_id(gr->get_weg_hang(),0) );
 			}
 			else if(wb->get_wtyp()!=powerline_wt  &&  ribi_t::is_bend(zeige)  &&  wb->has_diagonal_image()) {
@@ -4050,7 +4049,7 @@ void tool_build_wayobj_t::mark_tiles( player_t * player, const koord3d &start, c
 			zeiger_t *way_obj = NULL;
 			if( build ) {
 				way_obj = new zeiger_t(pos, player );
-				if(  gr->get_weg_hang()  ) {
+				if(  !gr->get_weg_hang().is_flat()  ) {
 					way_obj->set_after_image( desc->get_front_slope_image_id(gr->get_weg_hang()) );
 					way_obj->set_image( desc->get_back_slope_image_id(gr->get_weg_hang()) );
 				}
@@ -4432,7 +4431,7 @@ const char *tool_build_station_t::tool_station_dock_aux(player_t *player, koord3
 	if (gr->get_hoehe()!= pos.z) {
 		return "";
 	}
-	old_slope_t::type hang = gr->get_grund_hang();
+	slope_t hang = gr->get_grund_hang();
 	// first get the size
 	int len = desc->get_y() - 1;
 	koord dx(hang);
@@ -4456,7 +4455,7 @@ const char *tool_build_station_t::tool_station_dock_aux(player_t *player, koord3
 
 	// check, if we can build here ...
 
-	if(!old_slope_t::is_single(hang)) {
+	if(!hang.is_single()) {
 		return "Dock must be built on single slope!";
 	}
 	else {
@@ -4520,25 +4519,25 @@ DBG_MESSAGE("tool_build_station_t::tool_station_dock_aux()","building dock from 
 	int layout = 0;
 	koord3d bau_pos = welt->lookup_kartenboden(k)->get_pos();
 	koord dx2;
-	switch(hang) {
-		case old_slope_t::south:
-		case old_slope_t::south * 2:
+	switch(hang.get_value()) {
+		case slope_t::s:
+		case slope_t::s * 2:
 			layout = 0;
 			dx2 = koord::west;
 			break;
-		case old_slope_t::east:
-		case old_slope_t::east * 2:
+		case slope_t::e:
+		case slope_t::e * 2:
 			layout = 1;
 			dx2 =  koord::north;
 			break;
-		case old_slope_t::north:
-		case old_slope_t::north * 2:
+		case slope_t::n:
+		case slope_t::n * 2:
 			layout = 2;
 			dx2 = koord::west;
 			bau_pos = welt->lookup_kartenboden(last_k)->get_pos();
 			break;
-		case old_slope_t::west:
-		case old_slope_t::west * 2:
+		case slope_t::w:
+		case slope_t::w * 2:
 			layout = 3;
 			dx2 =  koord::north;
 			bau_pos = welt->lookup_kartenboden(last_k)->get_pos();
@@ -4701,7 +4700,7 @@ const char *tool_build_station_t::tool_station_flat_dock_aux(player_t *player, k
 	}
 
 	// check, if we can build here ...
-	if(  !gr->ist_natur()  || gr->get_grund_hang() != old_slope_t::flat  ) {
+	if(  !gr->ist_natur()  || !gr->get_grund_hang().is_flat()  ) {
 		return NOTICE_UNSUITABLE_GROUND;
 	}
 
@@ -4948,7 +4947,7 @@ DBG_MESSAGE("tool_station_aux()", "building %s on square %d,%d for waytype %x", 
 	// get valid ground
 	grund_t *bd = tool_intern_koord_to_weg_grund(player, welt, pos, wegtype);
 
-	if(  !bd  || bd->get_weg_hang() != old_slope_t::flat  ) {
+	if(  !bd  || !bd->get_weg_hang().is_flat()  ) {
 		// only flat tiles, only one stop per map square
 		return "No suitable way on the ground!";
 	}
@@ -6413,7 +6412,7 @@ const char* tool_signalbox_t::tool_signalbox_aux(player_t* player, koord3d pos, 
 				return "Cannot built this station/building\nin underground mode here.";
 			}
 
-			tunnelboden_t* tunnel = new tunnelboden_t(pos, 0);
+			tunnelboden_t* tunnel = new tunnelboden_t(pos, slope_t());
 			welt->access(pos.get_2d())->boden_hinzufuegen(tunnel);
 			tunnel->obj_add(new tunnel_t(pos, player, tunnel_desc));
 			player_t::add_maintenance( player, tunnel_desc->get_maintenance(), tunnel_desc->get_finance_waytype() );
@@ -7427,15 +7426,12 @@ void tool_forest_t::mark_tiles(  player_t *, const koord3d &start, const koord3d
 
 			zeiger_t *marker = new zeiger_t(gr->get_pos(), NULL );
 
-			const uint8 grund_hang = gr->get_grund_hang();
-			const uint8 weg_hang = gr->get_weg_hang();
-			const uint8 hang = max( corner_sw(grund_hang), corner_sw(weg_hang)) +
-					3 * max( corner_se(grund_hang), corner_se(weg_hang)) +
-					9 * max( corner_ne(grund_hang), corner_ne(weg_hang)) +
-					27 * max( corner_nw(grund_hang), corner_nw(weg_hang));
-			uint8 back_hang = (hang % 3) + 3 * ((uint8)(hang / 9)) + 27;
-			marker->set_after_image( ground_desc_t::marker->get_image( grund_hang % 27 ) );
-			marker->set_image( ground_desc_t::marker->get_image( back_hang ) );
+			const slope_t grund_hang = gr->get_grund_hang();
+			const slope_t weg_hang = gr->get_weg_hang();
+			const slope_t hang = slope_t::combined_max(grund_hang, weg_hang);
+			const slope_t back_hang = slope_t((hang.get_value() % 3) + 3 * ((hang.get_value() / 9)) + 27);
+			marker->set_after_image( ground_desc_t::marker->get_image( grund_hang.get_value() % 27 ) );
+			marker->set_image( ground_desc_t::marker->get_image( back_hang.get_value() ) );
 
 			marker->mark_image_dirty( marker->get_image(), 0 );
 			gr->obj_add( marker );

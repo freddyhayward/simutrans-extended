@@ -322,9 +322,9 @@ bool baum_t::register_desc(tree_desc_t *desc)
 
 // calculates tree position on a tile
 // takes care of slopes
-void baum_t::calc_off(uint8 slope, sint8 x_, sint8 y_)
+void baum_t::calc_off(slope_t slope, sint8 x_, sint8 y_)
 {
-	sint16 random = (sint16)( get_pos().x + get_pos().y + get_pos().z + slope + (uint64)this );
+	sint16 random = (sint16)( get_pos().x + get_pos().y + get_pos().z + slope.get_value() + (uint64)this );
 	// point on tile (imaginary origin at sw corner, x axis: north, y axis: east
 	sint16 x = x_==-128 ? (random + tree_id) & 31  : x_;
 	sint16 y = y_==-128 ? (random + get_age()) & 31 : y_;
@@ -333,8 +333,8 @@ void baum_t::calc_off(uint8 slope, sint8 x_, sint8 y_)
 	y = y ^ (x&1);
 
 	// bilinear interpolation of tile height
-	uint32 zoff_ = ((corner_ne(slope)*x*y + corner_nw(slope)*x*(32-y)
-	                 + corner_se(slope)*(32-x)*y + corner_sw(slope)*(32-x)*(32-y)) * TILE_HEIGHT_STEP) / (32*32);
+	uint32 zoff_ = ((slope.ne_cnr() * x * y + slope.nw_cnr() * x * (32 - y)
+					 + slope.se_cnr() * (32 - x) * y + slope.sw_cnr() * (32 - x) * (32 - y)) * TILE_HEIGHT_STEP) / (32 * 32);
 	// now zoff between 0 and TILE_HEIGHT_STEP-1
 	zoff = zoff_ < (uint32)TILE_HEIGHT_STEP ? zoff_ : TILE_HEIGHT_STEP-1u;
 
@@ -465,7 +465,7 @@ baum_t::baum_t(koord3d pos) :
 }
 
 
-baum_t::baum_t(koord3d pos, uint8 type, sint32 age, uint8 slope ) :
+baum_t::baum_t(koord3d pos, uint8 type, sint32 age, slope_t slope ) :
 #ifdef INLINE_OBJ_TYPE
 	obj_t(obj_t::baum, pos)
 #else

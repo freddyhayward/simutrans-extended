@@ -52,7 +52,7 @@ wayobj_t::wayobj_t(loadsave_t* const file) :
 #else
 	obj_no_info_t()
 #endif
-	, hang(old_slope_t::flat)
+	, hang(slope_t::flat)
 {
 	rdwr(file);
 }
@@ -64,7 +64,7 @@ wayobj_t::wayobj_t(koord3d const pos, player_t* const owner, ribi_t::ribi const 
 #else
 	obj_no_info_t(pos)
 #endif
-	, hang(old_slope_t::flat)
+	, hang(slope_t::flat)
 {
 	desc = b;
 	dir = d;
@@ -99,10 +99,10 @@ wayobj_t::~wayobj_t()
 				// restore old speed limit and way constraints
 				weg->reset_way_constraints();
 				sint32 max_speed;
-				const old_slope_t::type hang = gr ? gr->get_weg_hang() : old_slope_t::flat;
-				if(hang != old_slope_t::flat)
+				const slope_t hang = gr ? gr->get_weg_hang(): slope_t();
+				if(!hang.is_flat())
 				{
-					const uint slope_height = (hang & 7) ? 1 : 2;
+					const uint slope_height = hang.is_one_high() ? 1 : 2;
 					if(slope_height == 1)
 					{
 						max_speed = weg->get_desc()->get_topspeed_gradient_1();
@@ -125,9 +125,9 @@ wayobj_t::~wayobj_t()
 					tunnel_t *t = gr->find<tunnel_t>(1);
 					if(t)
 					{
-						if(hang != old_slope_t::flat)
+						if(!hang.is_flat())
 						{
-							const uint slope_height = (hang & 7) ? 1 : 2;
+							const uint slope_height = hang.is_one_high() ? 1 : 2;
 							if(slope_height == 1)
 							{
 								max_speed = t->get_desc()->get_topspeed_gradient_1();
@@ -149,9 +149,9 @@ wayobj_t::~wayobj_t()
 					bruecke_t *b = gr->find<bruecke_t>(1);
 					if(b)
 					{
-						if(hang != old_slope_t::flat)
+						if(!hang.is_flat())
 						{
-							const uint slope_height = (hang & 7) ? 1 : 2;
+							const uint slope_height = hang.is_one_high() ? 1 : 2;
 							if(slope_height == 1)
 							{
 								max_speed = b->get_desc()->get_topspeed_gradient_1();
@@ -285,9 +285,9 @@ void wayobj_t::finish_rd()
 			// Weg wieder freigeben, wenn das Signal nicht mehr da ist.
 			weg->set_electrify(true);
 			sint32 way_top_speed;
-			if(hang != old_slope_t::flat)
+			if(!slope_t(hang).is_flat())
 			{
-				const uint slope_height = (hang & 7) ? 1 : 2;
+				const uint slope_height = slope_t(hang).is_one_high() ? 1 : 2;
 				if(slope_height == 1)
 				{
 					way_top_speed = desc->get_topspeed_gradient_1();
@@ -323,7 +323,7 @@ void wayobj_t::rotate90()
 {
 	obj_t::rotate90();
 	dir = ribi_t::rotate90( dir);
-	hang = old_slope_t::rotate90(hang );
+	hang = slope_t(hang).rotate90().get_value();
 }
 
 
@@ -380,8 +380,8 @@ void wayobj_t::calc_image()
 		}
 
 		// if there is a slope, we are finished, only four choices here (so far)
-		hang = gr->get_weg_hang();
-		if(hang != old_slope_t::flat) {
+		hang = gr->get_weg_hang().get_value();
+		if(!slope_t(hang).is_flat()) {
 #ifdef MULTI_THREAD
 			pthread_mutex_unlock( &wayobj_calc_image_mutex );
 #endif

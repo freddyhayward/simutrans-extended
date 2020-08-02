@@ -51,7 +51,7 @@ void wasser_t::calc_image_internal(const bool calc_only_snowline_change)
 		koord pos2d(get_pos().get_2d());
 		sint16 height = welt->get_water_hgt(pos2d);
 		set_hoehe(height);
-		slope = old_slope_t::flat;
+		slope = slope_t();
 
 		sint16 zpos = min(welt->lookup_hgt(pos2d), height); // otherwise slope will fail ...
 
@@ -90,7 +90,7 @@ void wasser_t::calc_image_internal(const bool calc_only_snowline_change)
 				}
 
 				// artifical walls from here on ...
-				grund_t::calc_back_image(height, 0);
+				grund_t::calc_back_image(height, slope_t());
 			}
 		}
 	}

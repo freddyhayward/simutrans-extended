@@ -938,7 +938,7 @@ void fabrik_t::delete_all_fields()
 			grund_t *gr = plan->get_kartenboden();
 			if (field_t* f = gr->find<field_t>()) {
 				delete f; // implicitly removes the field from fields
-				plan->boden_ersetzen( gr, new boden_t(gr->get_pos(), old_slope_t::flat ) );
+				plan->boden_ersetzen( gr, new boden_t(gr->get_pos(), slope_t() ) );
 				plan->get_kartenboden()->calc_image();
 				continue;
 			}
@@ -1139,7 +1139,7 @@ bool fabrik_t::add_random_field(uint16 probability)
 				if (gr != NULL &&
 						gr->get_typ()        == grund_t::boden &&
                     (gr->get_hoehe()     == pos.z || gr->get_hoehe() == pos.z + 1 || gr->get_hoehe() == pos.z - 1) &&
-                    gr->get_grund_hang() == old_slope_t::flat &&
+                    gr->get_grund_hang().is_flat() &&
                     gr->ist_natur() &&
 						(gr->find<leitung_t>() || gr->kann_alle_obj_entfernen(NULL) == NULL)) {
 					// only on same height => climate will match!

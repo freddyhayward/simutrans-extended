@@ -57,7 +57,7 @@ public:
 	* @author V. Meyer
 	*/
 	image_id get_image() const OVERRIDE {
-		return hang ? desc->get_back_slope_image_id(hang) :
+		return hang ? desc->get_back_slope_image_id(slope_t(hang)) :
 			(diagonal ? desc->get_back_diagonal_image_id(dir) : desc->get_back_image_id(dir));
 	}
 
@@ -66,7 +66,7 @@ public:
 	* @author V. Meyer
 	*/
 	image_id get_front_image() const OVERRIDE {
-		return hang ? desc->get_front_slope_image_id(hang) :
+		return hang ? desc->get_front_slope_image_id(slope_t(hang)) :
 			diagonal ? desc->get_front_diagonal_image_id(dir) : desc->get_front_image_id(dir);
 	}
 

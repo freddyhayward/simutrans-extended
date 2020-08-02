@@ -253,23 +253,23 @@ const int old_slope_t::flags[81] = {
 };
 
 
-const old_slope_t::type hang_from_ribi[16] = {
-        0,
-        old_slope_t::north,
-        old_slope_t::east,
-        0,
-        old_slope_t::south,
-        0,
-        0,
-        0,
-        old_slope_t::west,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
+const slope_t hang_from_ribi[16] = {
+        slope_t(),
+        slope_t(slope_t::n),
+        slope_t(slope_t::e),
+        slope_t(),
+        slope_t(slope_t::s),
+        slope_t(),
+        slope_t(),
+        slope_t(),
+        slope_t(slope_t::w),
+        slope_t(),
+        slope_t(),
+        slope_t(),
+        slope_t(),
+        slope_t(),
+        slope_t(),
+        slope_t()
 };
 
 
@@ -293,9 +293,9 @@ const ribi_t::dir ribi_t::dirs[16] = {
 };
 
 
-ribi_t::ribi ribi_type(old_slope_t::type hang)   // north slope -> south, ... !
+ribi_t::ribi ribi_type(slope_t slope)   // north slope -> south, ... !
 {
-	return from_hang[hang];
+	return from_hang[slope.get_value()];
 }
 
 
@@ -392,30 +392,30 @@ sint16 old_slope_t::get_sloping_upwards(const old_slope_t::type slope, const sin
 }
 
 
-old_slope_t::type slope_type(koord dir)
+slope_t slope_type(koord dir)
 {
 	if (dir.x == 0) {
 		if (dir.y < 0) {		    // north direction -> south slope
-			return old_slope_t::south;
+			return slope_t(slope_t::s);
 		}
 		if (dir.y > 0) {
-			return old_slope_t::north;    // south direction -> north slope
+			return slope_t(slope_t::n);    // south direction -> north slope
 		}
 	}
 	if (dir.y == 0) {
 		if (dir.x < 0) {
-			return old_slope_t::east;	    // west direction -> east slope
+			return slope_t(slope_t::e);	    // west direction -> east slope
 		}
 		if (dir.x > 0) {
-			return old_slope_t::west;    // east direction -> west slope
+			return slope_t(slope_t::w);    // east direction -> west slope
 		}
 	}
-	return old_slope_t::flat;	    // ???
+	return slope_t();	    // ???
 }
 
 
 
-old_slope_t::type slope_type(ribi_t::ribi r)
+slope_t slope_type(ribi_t::ribi r)
 {
-	return hang_from_ribi[r];
+	return slope_t(hang_from_ribi[r]); //TODO: Replace the lookup table
 }

@@ -68,38 +68,38 @@ public:
 	* front underground diagonal (12).
 	*/
 
-	const image_t *get_background(old_slope_t::type slope, uint8 season, uint8 type ) const
+	const image_t *get_background(slope_t slope, uint8 season, uint8 type ) const
 	{
 		int const n = season && number_of_seasons == 1 ? 5 : 2;
-		return get_child<image_list_t>(n)->get_image(slope_indices[slope] + 4 * type);
+		return get_child<image_list_t>(n)->get_image(slope_indices[slope.get_value()] + 4 * type);
 	}
 
-	image_id get_background_id(old_slope_t::type slope, uint8 season, uint8 type ) const
+	image_id get_background_id(slope_t slope, uint8 season, uint8 type ) const
 	{
 		const image_t *desc = get_background(slope, season, type );
 		return desc != NULL ? desc->get_id() : IMG_EMPTY;
 	}
 
-	const image_t *get_foreground(old_slope_t::type slope, uint8 season, uint8 type ) const
+	const image_t *get_foreground(slope_t slope, uint8 season, uint8 type ) const
 	{
 		int const n = season && number_of_seasons == 1 ? 6 : 3;
-		return get_child<image_list_t>(n)->get_image(slope_indices[slope] + 4 * type);
+		return get_child<image_list_t>(n)->get_image(slope_indices[slope.get_value()] + 4 * type);
 	}
 
-	image_id get_foreground_id(old_slope_t::type slope, uint8 season, uint8 type) const
+	image_id get_foreground_id(slope_t slope, uint8 season, uint8 type) const
 	{
 		const image_t *desc = get_foreground(slope, season, type );
 		return desc != NULL ? desc->get_id() : IMG_EMPTY;
 	}
 
-	image_id get_underground_background_id(ribi_t::ribi ribi, old_slope_t::type slope) const
+	image_id get_underground_background_id(ribi_t::ribi ribi, slope_t slope) const
 	{
-		return slope == old_slope_t::flat ? get_child<image_list_t>(7)->get_image_id(ribi) : get_slope_image_nr(slope, false);
+		return slope.is_flat() ? get_child<image_list_t>(7)->get_image_id(ribi) : get_slope_image_nr(slope, false);
 	}
 
-	image_id get_underground_foreground_id(ribi_t::ribi ribi, old_slope_t::type slope) const
+	image_id get_underground_foreground_id(ribi_t::ribi ribi, slope_t slope) const
 	{
-		return slope == old_slope_t::flat ? get_child<image_list_t>(10)->get_image_id(ribi) : get_slope_image_nr(slope, true);
+		return slope.is_flat() ? get_child<image_list_t>(10)->get_image_id(ribi) : get_slope_image_nr(slope, true);
 	}
 
 	image_id get_diagonal_image_id(ribi_t::ribi ribi, bool front) const
@@ -110,7 +110,7 @@ public:
 
 private:
 
-	image_id get_slope_image_nr(old_slope_t::type slope, bool front) const
+	image_id get_slope_image_nr(slope_t slope, bool front) const
 	{
 		int const n = front ? 11 : 8;
 
@@ -120,7 +120,7 @@ private:
 		}
 
 		int nr;
-		switch (slope)
+		switch (slope.get_value())
 		{
 		case 4:
 			nr = 0;

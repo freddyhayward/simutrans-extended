@@ -42,27 +42,27 @@ bridge_desc_t::img_t bridge_desc_t::get_pillar(ribi_t::ribi ribi)
  *  Description:
  *      Returns image index of a straight bridge-start piece (on slope)
  */
-bridge_desc_t::img_t bridge_desc_t::get_start(old_slope_t::type slope) const
+bridge_desc_t::img_t bridge_desc_t::get_start(slope_t slope) const
 {
 	// if double heights enabled and desc has 2 height images present then use these
 	if(  ground_desc_t::double_grounds  &&  get_background(N_Start2, 0) != IMG_EMPTY  ) {
-		switch(  slope  ) {
-			case old_slope_t::north: return N_Start;
-			case old_slope_t::south: return S_Start;
-			case old_slope_t::east:  return O_Start;
-			case old_slope_t::west: return W_Start;
-			case old_slope_t::north * 2: return N_Start2;
-			case old_slope_t::south * 2: return S_Start2;
-			case old_slope_t::east * 2: return O_Start2;
-			case old_slope_t::west * 2: return W_Start2;
+		switch(  slope.get_value()  ) {
+			case slope_t::n: return N_Start;
+			case slope_t::s: return S_Start;
+			case slope_t::e:  return O_Start;
+			case slope_t::w: return W_Start;
+			case slope_t::n * 2: return N_Start2;
+			case slope_t::s * 2: return S_Start2;
+			case slope_t::e * 2: return O_Start2;
+			case slope_t::w * 2: return W_Start2;
 		}
 	}
 	else {
-		switch(  slope  ) {
-			case old_slope_t::north: case old_slope_t::north * 2: return N_Start;
-			case old_slope_t::south: case old_slope_t::south * 2: return S_Start;
-			case old_slope_t::east:  case old_slope_t::east * 2: return O_Start;
-			case old_slope_t::west: case old_slope_t::west * 2: return W_Start;
+		switch(  slope.get_value()  ) {
+			case slope_t::n: case slope_t::n * 2: return N_Start;
+			case slope_t::s: case slope_t::s * 2: return S_Start;
+			case slope_t::e:  case slope_t::e * 2: return O_Start;
+			case slope_t::w: case slope_t::w * 2: return W_Start;
 		}
 	}
 	return (img_t) - 1;
@@ -76,26 +76,26 @@ bridge_desc_t::img_t bridge_desc_t::get_start(old_slope_t::type slope) const
  *  Description:
  *      Richtigen Index für Rampenstart ück bestimmen
  */
-bridge_desc_t::img_t bridge_desc_t::get_ramp(old_slope_t::type slope) const
+bridge_desc_t::img_t bridge_desc_t::get_ramp(slope_t slope) const
 {
 	if(  ground_desc_t::double_grounds  &&  has_double_ramp()  ) {
-		switch(  slope  ) {
-			case old_slope_t::north: return S_Ramp;
-			case old_slope_t::south: return N_Ramp;
-			case old_slope_t::east:  return W_Ramp;
-			case old_slope_t::west: return O_Ramp;
-			case old_slope_t::north * 2: return S_Ramp2;
-			case old_slope_t::south * 2: return N_Ramp2;
-			case old_slope_t::east * 2: return W_Ramp2;
-			case old_slope_t::west * 2: return O_Ramp2;
+		switch(  slope.get_value()  ) {
+			case slope_t::n: return S_Ramp;
+			case slope_t::s: return N_Ramp;
+			case slope_t::e:  return W_Ramp;
+			case slope_t::w: return O_Ramp;
+			case slope_t::n * 2: return S_Ramp2;
+			case slope_t::s * 2: return N_Ramp2;
+			case slope_t::e * 2: return W_Ramp2;
+			case slope_t::w * 2: return O_Ramp2;
 		}
 	}
 	else {
-		switch(  slope  ) {
-			case old_slope_t::north: case old_slope_t::north * 2: return S_Ramp;
-			case old_slope_t::south: case old_slope_t::south * 2: return N_Ramp;
-			case old_slope_t::east:  case old_slope_t::east * 2: return W_Ramp;
-			case old_slope_t::west: case old_slope_t::west * 2: return O_Ramp;
+		switch(  slope.get_value()  ) {
+			case slope_t::n: case slope_t::n * 2: return S_Ramp;
+			case slope_t::s: case slope_t::s * 2: return N_Ramp;
+			case slope_t::e:  case slope_t::e * 2: return W_Ramp;
+			case slope_t::w: case slope_t::w * 2: return O_Ramp;
 		}
 	}
 	return (img_t) - 1;
@@ -109,10 +109,10 @@ bridge_desc_t::img_t bridge_desc_t::get_ramp(old_slope_t::type slope) const
  *  Description:
  *      returns image index for appropriate ramp or start image given ground and way slopes
  */
-bridge_desc_t::img_t bridge_desc_t::get_end(old_slope_t::type test_slope, old_slope_t::type ground_slope, old_slope_t::type way_slope) const
+bridge_desc_t::img_t bridge_desc_t::get_end(slope_t test_slope, slope_t ground_slope, slope_t way_slope) const
 {
 	img_t end_image;
-	if(test_slope == old_slope_t::flat  ) {
+	if(test_slope.is_flat()  ) {
 		end_image = get_ramp( way_slope );
 	}
 	else {

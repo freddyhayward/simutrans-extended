@@ -288,7 +288,7 @@ bool ai_goods_t::suche_platz1_platz2(fabrik_t *qfab, fabrik_t *zfab, int length 
 					// On which tiles we can start?
 					FOR(vector_tpl<koord>, const& j, *next) {
 						grund_t const* const gr = welt->lookup_kartenboden(j);
-						if(gr && gr->get_grund_hang() == old_slope_t::flat && !gr->hat_wege() && !gr->get_leitung()  ) {
+						if(gr && gr->get_grund_hang().is_flat() && !gr->hat_wege() && !gr->get_leitung()  ) {
 							tile_list[i].append_unique( gr->get_pos() );
 						}
 					}
@@ -584,7 +584,7 @@ int ai_goods_t::baue_bahnhof(const koord* p, int vehicle_count)
 
 	for(  int i=0;  i<laenge;  i++  ) {
 		grund_t *gr = welt->lookup_kartenboden(t);
-		ok &= (gr != NULL) &&  !gr->has_two_ways()  && gr->get_weg_hang() == old_slope_t::flat;
+		ok &= (gr != NULL) &&  !gr->has_two_ways()  && gr->get_weg_hang().is_flat();
 		if(!ok) {
 			break;
 		}

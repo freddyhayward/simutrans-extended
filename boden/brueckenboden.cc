@@ -23,7 +23,7 @@
 
 #include "../vehicle/simvehicle.h"
 
-brueckenboden_t::brueckenboden_t(koord3d pos, int grund_hang, int weg_hang) : grund_t(pos)
+brueckenboden_t::brueckenboden_t(koord3d pos, slope_t grund_hang, slope_t weg_hang) : grund_t(pos)
 {
 	slope = grund_hang;
 	this->weg_hang = weg_hang;
@@ -39,7 +39,7 @@ void brueckenboden_t::calc_image_internal(const bool calc_only_snowline_change)
 		if(  !calc_only_snowline_change  ) {
 			grund_t::calc_back_image( get_pos().z, slope );
 			set_flag( draw_as_obj );
-			if((get_grund_hang() == old_slope_t::west && abs(back_imageid) > 11) || (get_grund_hang() == old_slope_t::north && get_back_image(0) != IMG_EMPTY)  ) {
+			if((get_grund_hang() == slope_t(slope_t::w) && abs(back_imageid) > 11) || (get_grund_hang() == slope_t(slope_t::n) && get_back_image(0) != IMG_EMPTY)  ) {
 				// must draw as obj, since there is a slop here nearby
 				koord pos = get_pos().get_2d() + koord( get_grund_hang() );
 				grund_t *gr = welt->lookup_kartenboden( pos );
@@ -64,20 +64,24 @@ void brueckenboden_t::rdwr(loadsave_t *file)
 	if(file->get_version()<88009) {
 		uint8 sl;
 		file->rdwr_byte(sl);
-		slope = sl;
+		slope = slope_t(sl);
 	}
 	if(  file->is_saving()  &&  file->get_version() < 112007  ) {
 		// truncate double weg_hang to single weg_hang, better than nothing
-		uint8 sl = min( corner_sw(weg_hang), 1 ) + min( corner_se(weg_hang), 1 ) * 2 + min( corner_ne(weg_hang), 1 ) * 4 + min( corner_nw(weg_hang), 1 ) * 8;
+		uint8 sl = min(weg_hang.sw_cnr(), 1 ) + min(weg_hang.se_cnr(), 1 ) * 2 + min(weg_hang.ne_cnr(), 1 ) * 4 + min(weg_hang.nw_cnr(), 1 ) * 8;
 		file->rdwr_byte(sl);
 	}
 	else {
-		file->rdwr_byte(weg_hang);
+	    uint8 tmp_hang = weg_hang.get_value();
+		file->rdwr_byte(tmp_hang);
+		weg_hang = slope_t(tmp_hang);
 	}
 
 	if(  file->is_loading()  &&  file->get_version() < 112007  ) {
 		// convert slopes from old single height saved game
-		weg_hang = (scorner_sw(weg_hang) + scorner_se(weg_hang) * 3 + scorner_ne(weg_hang) * 9 + scorner_nw(weg_hang) * 27) * env_t::pak_height_conversion_factor;
+        uint8 tmp_hang = weg_hang.get_value();
+		weg_hang = slope_t(scorner_sw(tmp_hang), scorner_se(tmp_hang), scorner_ne(tmp_hang), scorner_nw(tmp_hang));
+		weg_hang = slope_t(weg_hang.get_value() * env_t::pak_height_conversion_factor);
 	}
 
 	if(!find<bruecke_t>()) {
@@ -101,7 +105,7 @@ void brueckenboden_t::rotate90()
 {
 	if( sint8 way_offset = get_weg_yoff() ) {
 		pos.rotate90( welt->get_size().y-1 );
-		slope = old_slope_t::rotate90(slope );
+		slope = slope.rotate90();
 		// since the y_off contains also the way height, we need to remove it before rotations and add it back afterwards
 		for( uint8 i = 0; i < objlist.get_top(); i++ ) {
 			obj_t * obj = obj_bei( i );
@@ -117,7 +121,7 @@ void brueckenboden_t::rotate90()
 		}
 	}
 	else {
-		weg_hang = old_slope_t::rotate90(weg_hang );
+		weg_hang = weg_hang.rotate90();
 		grund_t::rotate90();
 	}
 }
@@ -125,9 +129,9 @@ void brueckenboden_t::rotate90()
 
 sint8 brueckenboden_t::get_weg_yoff() const
 {
-	if(  ist_karten_boden()  &&  weg_hang == 0  ) {
+	if(  ist_karten_boden()  &&  weg_hang.is_flat() ) {
 		// we want to find maximum height of slope corner shortcut as we know this is n, s, e or w and single heights are not integer multiples of 8
-		return TILE_HEIGHT_STEP * old_slope_t::max_diff(slope);
+		return TILE_HEIGHT_STEP * slope.max_diff();
 	}
 	else {
 		return 0;

@@ -1001,8 +1001,8 @@ void signal_t::calc_image()
 	grund_t *gr = welt->lookup(get_pos());
 	if(gr) {
 		set_flag(obj_t::dirty);
-		const old_slope_t::type full_hang = gr->get_weg_hang();
-		const sint8 hang_diff = old_slope_t::max_diff(full_hang);
+		const slope_t full_hang = gr->get_weg_hang();
+		const sint8 hang_diff = full_hang.max_diff();
 		const ribi_t::ribi hang_dir = ribi_t::backward( ribi_type(full_hang) );
 
 		weg_t *sch = gr->get_weg(desc->get_wtyp()!=tram_wt ? desc->get_wtyp() : track_wt);
@@ -1025,7 +1025,7 @@ void signal_t::calc_image()
 			}
 
 			// vertical offset of the signal positions
-			if(full_hang == old_slope_t::flat) {
+			if(full_hang.is_flat()) {
 				yoff = -gr->get_weg_yoff();
 				after_yoffset = yoff;
 			}

@@ -281,7 +281,7 @@ void planquadrat_t::rdwr(loadsave_t *file, koord pos )
 			if (gr  &&  gtyp == grund_t::fundament  &&  gr->find<gebaeude_t>() == NULL) {
 				koord3d pos = gr->get_pos();
 				// show normal ground here
-				grund_t *neu = new boden_t(pos, 0);
+				grund_t *neu = new boden_t(pos, slope_t());
 				if(gr->get_flag(grund_t::has_text)) {
 					neu->set_flag(grund_t::has_text);
 					gr->clear_flag(grund_t::has_text);
@@ -373,8 +373,8 @@ void planquadrat_t::check_season_snowline(const bool season_change, const bool s
 void planquadrat_t::correct_water()
 {
 	grund_t *gr = get_kartenboden();
-	old_slope_t::type slope = gr->get_grund_hang();
-	sint8 max_height = gr->get_hoehe() + old_slope_t::max_diff(slope );
+	slope_t slope = gr->get_grund_hang();
+	sint8 max_height = gr->get_hoehe() + slope.max_diff();
 	koord k = gr->get_pos().get_2d();
 	sint8 water_hgt = welt->get_water_hgt(k);
 	if(  gr  &&  gr->get_typ() != grund_t::wasser  &&  max_height <= water_hgt  ) {
@@ -393,13 +393,13 @@ void planquadrat_t::correct_water()
 	gr = get_kartenboden();
 	if(  gr  &&  gr->get_typ() != grund_t::wasser  &&  gr->get_disp_height() < water_hgt  &&  welt->max_hgt(k) > water_hgt  ) {
 		sint8 disp_hneu = water_hgt;
-		sint8 disp_hn_sw = max( gr->get_hoehe() + corner_sw(slope), water_hgt );
-		sint8 disp_hn_se = max( gr->get_hoehe() + corner_se(slope), water_hgt );
-		sint8 disp_hn_ne = max( gr->get_hoehe() + corner_ne(slope), water_hgt );
-		sint8 disp_hn_nw = max( gr->get_hoehe() + corner_nw(slope), water_hgt );
-		const old_slope_t::type sneu = encode_corners(disp_hn_sw - disp_hneu, disp_hn_se - disp_hneu, disp_hn_ne - disp_hneu, disp_hn_nw - disp_hneu);
+		sint8 disp_hn_sw = max(gr->get_hoehe() + slope.sw_cnr(), water_hgt );
+		sint8 disp_hn_se = max(gr->get_hoehe() + slope.se_cnr(), water_hgt );
+		sint8 disp_hn_ne = max(gr->get_hoehe() + slope.ne_cnr(), water_hgt );
+		sint8 disp_hn_nw = max(gr->get_hoehe() + slope.nw_cnr(), water_hgt );
+		const slope_t sneu = slope_t(disp_hn_sw - disp_hneu, disp_hn_se - disp_hneu, disp_hn_ne - disp_hneu, disp_hn_nw - disp_hneu);
 		gr->set_hoehe( disp_hneu );
-		gr->set_grund_hang( (old_slope_t::type)sneu );
+		gr->set_grund_hang(sneu);
 	}
 }
 
@@ -408,10 +408,10 @@ void planquadrat_t::abgesenkt()
 {
 	grund_t *gr = get_kartenboden();
 	if(gr) {
-		const uint8 slope = gr->get_grund_hang();
+		const slope_t slope = gr->get_grund_hang();
 
 		gr->obj_loesche_alle(NULL);
-		sint8 max_hgt = gr->get_hoehe() + (slope ? 1 : 0);		// only matters that not flat
+		sint8 max_hgt = gr->get_hoehe() + (!slope.is_flat() ? 1 : 0);		// only matters that not flat
 
 		koord k(gr->get_pos().get_2d());
 		if(  max_hgt <= welt->get_water_hgt( k )  &&  gr->get_typ() != grund_t::wasser  ) {
@@ -437,10 +437,10 @@ void planquadrat_t::angehoben()
 {
 	grund_t *gr = get_kartenboden();
 	if(gr) {
-		const uint8 slope = gr->get_grund_hang();
+		const slope_t slope = gr->get_grund_hang();
 
 		gr->obj_loesche_alle(NULL);
-		sint8 max_hgt = gr->get_hoehe() + (slope ? 1 : 0);		// only matters that not flat
+		sint8 max_hgt = gr->get_hoehe() + (!slope.is_flat() ? 1 : 0);		// only matters that not flat
 
 		koord k(gr->get_pos().get_2d());
 		if(  max_hgt > welt->get_water_hgt( k )  &&  gr->get_typ() == grund_t::wasser  ) {
@@ -486,8 +486,8 @@ void planquadrat_t::display_obj(const sint16 xpos, const sint16 ypos, const sint
 		for(  ;  i < ground_size;  i++  ) {
 			const grund_t* gr = data.some[i];
 			const sint8 h = gr->get_hoehe();
-			const old_slope_t::type slope = gr->get_grund_hang();
-			const sint8 htop = h + max(max(corner_sw(slope), corner_se(slope)),max(corner_ne(slope), corner_nw(slope)));
+			const slope_t slope = gr->get_grund_hang();
+			const sint8 htop = h + max(max(slope.sw_cnr(), slope.se_cnr()), max(slope.ne_cnr(), slope.nw_cnr()));
 			// above ground
 			if(  h > h0  ) {
 				break;
@@ -517,7 +517,7 @@ void planquadrat_t::display_obj(const sint16 xpos, const sint16 ypos, const sint
 
 			for(  uint8 j = i;  j < ground_size;  j++  ) {
 				const sint8 h = data.some[j]->get_hoehe();
-				const sint8 htop = h + old_slope_t::max_diff(data.some[j]->get_grund_hang());
+				const sint8 htop = h + data.some[j]->get_grund_hang().max_diff();
 				// too high?
 				if(  h > hmax  ) {
 					break;
@@ -543,8 +543,8 @@ void planquadrat_t::display_obj(const sint16 xpos, const sint16 ypos, const sint
 	for(  ;  i < ground_size;  i++  ) {
 		const grund_t* gr = data.some[i];
 		const sint8 h = gr->get_hoehe();
-		const old_slope_t::type slope = gr->get_grund_hang();
-		const sint8 htop = h + max(max(corner_sw(slope), corner_se(slope)),max(corner_ne(slope), corner_nw(slope)));
+		const slope_t slope = gr->get_grund_hang();
+		const sint8 htop = h + max(max(slope.sw_cnr(), slope.se_cnr()), max(slope.ne_cnr(), slope.nw_cnr()));
 		// too high?
 		if(  h > hmax  ) {
 			break;
@@ -658,7 +658,7 @@ void planquadrat_t::display_overlay(const sint16 xpos, const sint16 ypos) const
 			// opaque boxes (
 			const sint16 r=raster_tile_width/8;
 			const sint16 x=xpos+raster_tile_width/2-r;
-			const sint16 y=ypos+(raster_tile_width*3)/4-r - (gr->get_grund_hang()? tile_raster_scale_y(8,raster_tile_width): 0);
+			const sint16 y=ypos+(raster_tile_width*3)/4-r - (!gr->get_grund_hang().is_flat() ? tile_raster_scale_y(8,raster_tile_width): 0);
 			const bool kartenboden_dirty = gr->get_flag(grund_t::dirty);
 			const sint16 off = (raster_tile_width>>5);
 			// suitable start search

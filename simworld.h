@@ -2100,7 +2100,7 @@ public:
 	 * @note Will always return north-west except on border tiles.
 	 * @pre pos has to be a valid grid coordinate, undefined otherwise.
 	 */
-	inline old_slope_t::type get_corner_to_operate(const koord &pos) const
+	inline slope4_t::type get_corner_to_operate(const koord &pos) const
 	{
 		// Normal tile
 		if ( ( pos.x != cached_grid_size.x )  &&  ( pos.y != cached_grid_size.y ) ){
@@ -2147,13 +2147,13 @@ public:
 	 * @note Uses the corner height for the best slope.
 	 * @author prissi
 	 */
-	uint8	recalc_natural_slope( const koord k, sint8 &new_height ) const;
+	slope_t	recalc_natural_slope( const koord k, sint8 &new_height ) const;
 
 	/**
 	 * Returns the natural slope a a position using the grid.
 	 * @note No checking, and only using the grind for calculation.
 	 */
-	uint8	calc_natural_slope( const koord k ) const;
+	slope_t	calc_natural_slope( const koord k ) const;
 
 	// Getter/setter methods for maintaining the industry density
 	inline uint32 get_target_industry_density() const { return ((uint32)finance_history_month[0][WORLD_CITICENS] * (sint64)industry_density_proportion) / 1000000ll; }

@@ -21,19 +21,19 @@
 fundament_t::fundament_t(loadsave_t *file, koord pos ) : grund_t(koord3d(pos,0) )
 {
 	rdwr(file);
-	slope = (uint8)old_slope_t::flat;
+	slope = slope_t();
 }
 
 
-fundament_t::fundament_t(koord3d pos, old_slope_t::type hang, bool build_up ) : grund_t(pos)
+fundament_t::fundament_t(koord3d pos, slope_t hang, bool build_up ) : grund_t(pos)
 {
 	set_image( IMG_EMPTY );
-	if(hang && build_up) {
+	if(!hang.is_flat() && build_up) {
 		pos = get_pos();
-		pos.z += old_slope_t::max_diff(hang);
+		pos.z += hang.max_diff();
 		set_pos( pos );
 	}
-	slope = (uint8)old_slope_t::flat;
+	slope = slope_t();
 }
 
 
@@ -42,7 +42,7 @@ void fundament_t::calc_image_internal(const bool calc_only_snowline_change)
 	set_image( ground_desc_t::get_ground_tile(this) );
 
 	if(  !calc_only_snowline_change  ) {
-		grund_t::calc_back_image( get_disp_height(), 0 );
+		grund_t::calc_back_image( get_disp_height(), slope_t() );
 	}
 	set_flag( dirty );
 }
