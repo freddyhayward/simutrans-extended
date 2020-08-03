@@ -39,8 +39,8 @@ public:
     };
     static constexpr uint8 MAX_CNR_HGT = 2;
     static constexpr uint8 NUM_CNR_HGTS = MAX_CNR_HGT + 1;
-    static constexpr uint8 hgt_max(uint8 a, uint8 b) {return a ? a > b : b;}
-    static constexpr uint8 hgt_min(uint8 a, uint8 b) {return a ? a < b : b;}
+    static constexpr uint8 hgt_max(uint8 a, uint8 b) {return a > b ? a : b;}
+    static constexpr uint8 hgt_min(uint8 a, uint8 b) {return a < b ? a : b;}
     constexpr uint8 sw_cnr() const {return cnr_hgt(sw);}
     constexpr uint8 se_cnr() const {return cnr_hgt(se);}
     constexpr uint8 ne_cnr() const {return cnr_hgt(ne);}
