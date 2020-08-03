@@ -3031,7 +3031,7 @@ void tool_build_bridge_t::mark_tiles(  player_t *player, const koord3d &start, c
 	// single height -> height is 1
 	// double height -> height is 2
 	const slope_t slope = gr->get_grund_hang();
-	uint8 max_height = slope.is_flat() ? slope.max_diff() : bridge_height;
+	uint8 max_height = !slope.is_flat() ? slope.max_diff() : bridge_height;
 
 	zeiger_t *way = new zeiger_t(start, player );
 	const bridge_desc_t::img_t img0 = desc->get_end( slope, slope, slope_t(slope_type(zv).get_value()*max_height) );
@@ -6425,7 +6425,7 @@ const char* tool_signalbox_t::tool_signalbox_aux(player_t* player, koord3d pos, 
 			return error;
 		}
 
-		if(gr->get_grund_hang() == 0)
+		if(gr->get_grund_hang().is_flat())
 		{
 			int layout = 0;
 			koord k(pos.get_2d());
@@ -6604,7 +6604,7 @@ const char *tool_build_depot_t::tool_depot_aux(player_t *player, koord3d pos, co
 			ribi = bd->get_weg_ribi_unmasked(wegtype);
 		}
 
-		if(ribi_t::is_single(ribi)  &&  bd->get_weg_hang()==0) {
+		if(ribi_t::is_single(ribi)  &&  bd->get_weg_hang().is_flat()) {
 
 			int layout = 0;
 			switch(ribi) {

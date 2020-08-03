@@ -387,7 +387,7 @@ koord3d bridge_builder_t::find_end_pos(player_t *player, koord3d pos, const koor
 	const slope_t slope = gr2->get_weg_hang();
 	const sint8 start_height = gr2->get_hoehe() + slope.max_diff();
 	sint8 min_bridge_height = start_height; /* was  + (slope==0) */
-	sint8 min_height = start_height - (1+desc->has_double_ramp()) + (slope==0);
+	sint8 min_height = start_height - (1+desc->has_double_ramp()) + (slope.is_flat());
 	sint8 max_height = start_height + (!slope.is_flat() || gr2->ist_tunnel() ? 0 : (1+desc->has_double_ramp()));
 
 	// when a bridge starts on an elevated way, only downwards ramps are allowed
@@ -801,7 +801,7 @@ void bridge_builder_t::build_bridge(player_t *player, const koord3d start, const
 	}
 	slope_t end_slope = end_gr->get_weg_hang();
 	sint8 end_slope_height = end.z;
-	if(  end_slope != slope_type(zv) && end_slope != slope_type(zv)*2  ) {
+	if(  end_slope != slope_type(zv) && end_slope != slope_t(slope_type(zv).get_value()*2)  ) {
 		end_slope_height += end_slope.max_diff();
 	}
 

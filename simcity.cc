@@ -3603,7 +3603,7 @@ void stadt_t::check_bau_spezial(bool new_town)
 						koord k = i.key;
 						const grund_t *gr = welt->lookup_kartenboden(k);
 						if (i.value) {
-							if(gr->get_hoehe()==h  &&  gr->get_grund_hang()==0) {
+							if(gr->get_hoehe()==h  &&  gr->get_grund_hang().is_flat()) {
 								gebaeude_t *gb = gr->find<gebaeude_t>();
 								if (gb) {
 									hausbauer_t::remove(NULL, gb, false);

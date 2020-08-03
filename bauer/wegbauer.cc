@@ -607,7 +607,7 @@ bool way_builder_t::is_allowed_step( const grund_t *from, const grund_t *to, sin
 
 	const sint8 altitude = max(from->get_pos().z, to->get_pos().z) - welt->get_groundwater();
 	const sint8 max_altitude = desc->get_max_altitude();
-	if(max_altitude > 0 && altitude > max_altitude && (from->get_grund_hang() + to->get_grund_hang() == 0))
+	if(max_altitude > 0 && altitude > max_altitude && (from->get_grund_hang().is_flat() && to->get_grund_hang().is_flat()))
 	{
 		// Too high - exclude slope tiles from this to allow canalising rapids
 		return false;
@@ -1336,7 +1336,7 @@ void way_builder_t::check_for_bridge(const grund_t* parent_from, const grund_t* 
 	}
 
 	// ok, so now we do a closer investigation
-	if(  bridge_desc  && (  ribi_type(from->get_grund_hang()) == ribi_t::backward(ribi_type(zv))  ||  from->get_grund_hang() == 0  )
+	if(  bridge_desc  && (  ribi_type(from->get_grund_hang()) == ribi_t::backward(ribi_type(zv))  ||  from->get_grund_hang().is_flat()  )
 		&&  bridge_builder_t::can_place_ramp(player_builder, from, desc->get_wtyp(),ribi_t::backward(ribi_type(zv)))  ) {
 		// Try a bridge.
 		const sint32 cost_difference=desc->get_maintenance()>0 ? (bridge_desc->get_maintenance()*4l+3l)/desc->get_maintenance() : 16;
@@ -1611,7 +1611,7 @@ DBG_DEBUG("insert to close","(%i,%i,%i)  f=%i",gr->get_pos().x,gr->get_pos().y,g
 					continue;
 				}
 				// check terraforming (but not in curves)
-				if (gr->get_grund_hang()==0  ||  (tmp->parent!=NULL  &&  tmp->parent->parent!=NULL  &&  r==straight_dir)) {
+				if (gr->get_grund_hang().is_flat()  ||  (tmp->parent!=NULL  &&  tmp->parent->parent!=NULL  &&  r==straight_dir)) {
 					to = welt->lookup_kartenboden(gr->get_pos().get_2d() + zv);
 					if (to==NULL  ||  (check_slope(gr, to)  &&  gr->get_vmove(r)!=to->get_vmove(ribi_t::backward(r)))) {
 						continue;
@@ -2126,7 +2126,7 @@ void way_builder_t::build_tunnel_and_bridges()
 				continue;
 			}
 
-			if(start->get_grund_hang()==0  ||  start->get_grund_hang()==slope_type(zv*(-1))) {
+			if(start->get_grund_hang().is_flat()  ||  start->get_grund_hang()==slope_type(zv*(-1))) {
 				// bridge here, since the route is saved backwards, we have to build it at the posterior end
 				bridge_builder_t::build( player_builder, route[i+1], bridge_desc, overtaking_mode);
 			}
@@ -2339,7 +2339,7 @@ sint64 way_builder_t::calc_costs()
 					// already a bridge/tunnel there ...
 					continue;
 				}
-				if(start->get_grund_hang()==0  ||  start->get_grund_hang()==slope_type(zv*(-1))) {
+				if(start->get_grund_hang().is_flat()  ||  start->get_grund_hang()==slope_type(zv*(-1))) {
 					// bridge
 					costs += bridge_desc->get_value()*(sint64)(koord_distance(route[i], route[i+1])+1);
 					continue;
