@@ -41,20 +41,20 @@ public:
     static constexpr uint8 NUM_CNR_HGTS = MAX_CNR_HGT + 1;
     static constexpr uint8 hgt_max(uint8 a, uint8 b) {return a > b ? a : b;}
     static constexpr uint8 hgt_min(uint8 a, uint8 b) {return a < b ? a : b;}
-    constexpr uint8 sw_cnr() const {return cnr_hgt(sw);}
-    constexpr uint8 se_cnr() const {return cnr_hgt(se);}
-    constexpr uint8 ne_cnr() const {return cnr_hgt(ne);}
-    constexpr uint8 nw_cnr() const {return cnr_hgt(nw);}
-    constexpr bool any_eq(uint8 hgt) const {return cnr_hgt(sw) == hgt || cnr_hgt(se) == hgt || cnr_hgt(ne) == hgt || cnr_hgt(nw) == hgt;}
-    constexpr bool any_gt(uint8 hgt) const {return cnr_hgt(sw) > hgt || cnr_hgt(se) > hgt || cnr_hgt(ne) > hgt || cnr_hgt(nw) > hgt;}
+    constexpr uint8 hsw() const {return cnr_hgt(sw);}
+    constexpr uint8 hse() const {return cnr_hgt(se);}
+    constexpr uint8 hne() const {return cnr_hgt(ne);}
+    constexpr uint8 hnw() const {return cnr_hgt(nw);}
+    constexpr bool any_eq(uint8 hgt) const {return hsw() == hgt || hse() == hgt || hne() == hgt || hnw() == hgt;}
+    constexpr bool any_gt(uint8 hgt) const {return hsw() > hgt || hse() > hgt || hne() > hgt || hnw() > hgt;}
     constexpr slope_t() : value(flat) {}; // Flat slope by default
     constexpr explicit slope_t(uint8 _v) : value(_v) {};
     constexpr slope_t(uint8 _sw, uint8 _se, uint8 _ne, uint8 _nw) : slope_t(_sw*sw + _se*se + _ne*ne + _nw*nw) {};
 
     constexpr bool is_flat() const {return value == flat;} //TODO: remove once value can be sufficiently accessed through other methods.
 
-    constexpr bool allows_way_ns() const {return cnr_hgt(ne) == cnr_hgt(nw) && cnr_hgt(sw) == cnr_hgt(se);} //TODO: use generalised function with ribi_t::ribi as argument
-    constexpr bool allows_way_ew() const {return cnr_hgt(se) == cnr_hgt(ne) && cnr_hgt(sw) == cnr_hgt(nw);} //TODO: use generalised function with ribi_t::ribi as argument
+    constexpr bool allows_way_ns() const {return hne() == hnw() && hsw() == hse();} //TODO: use generalised function with ribi_t::ribi as argument
+    constexpr bool allows_way_ew() const {return hse() == hne() && hsw() == hnw();} //TODO: use generalised function with ribi_t::ribi as argument
     constexpr bool allows_way() const {return allows_way_ns() || allows_way_ew();}
     constexpr bool allows_junction() const {return allows_way_ns() && allows_way_ew();}
 
@@ -76,9 +76,9 @@ public:
 
     static uint8 min_diff(slope_t high, slope_t low) {return high.diff(low).min_cnr_hgt();}
 
-    constexpr slope_t rotate90() const {return {cnr_hgt(se), cnr_hgt(ne), cnr_hgt(nw), cnr_hgt(sw)};}
+    constexpr slope_t rotate90() const {return {hse(), hne(), hnw(), hsw()};}
 
-    constexpr uint8 get_value() const {return value;} //TODO: remove once value can be sufficiently accessed through other methods.
+    constexpr uint8 get_value() const { return value;} //TODO: remove once value can be sufficiently accessed through other methods.
 
     constexpr bool is_legal() const {return !is_all_up() && !any_gt(MAX_CNR_HGT);}
 
@@ -93,8 +93,8 @@ public:
     static constexpr slope_t filled(uint8 hgt) {return {hgt, hgt, hgt, hgt};}
 
     static constexpr slope_t combined(slope_t a, slope_t b) {return slope_t(a.get_value() | b.get_value());}
-    static constexpr slope_t combined_max(slope_t a, slope_t b) {return {hgt_max(a.sw_cnr(), b.sw_cnr()), hgt_max(a.se_cnr(), b.se_cnr()), hgt_max(a.ne_cnr(), b.ne_cnr()), hgt_max(a.ne_cnr(), b.ne_cnr())};}
-    static constexpr slope_t combined_min(slope_t a, slope_t b) {return {hgt_min(a.sw_cnr(), b.sw_cnr()), hgt_min(a.se_cnr(), b.se_cnr()), hgt_min(a.ne_cnr(), b.ne_cnr()), hgt_min(a.ne_cnr(), b.ne_cnr())};}
+    static constexpr slope_t combined_max(slope_t a, slope_t b) {return {hgt_max(a.hsw(), b.hsw()), hgt_max(a.hse(), b.hse()), hgt_max(a.hne(), b.hne()), hgt_max(a.hne(), b.hne())};}
+    static constexpr slope_t combined_min(slope_t a, slope_t b) {return {hgt_min(a.hsw(), b.hsw()), hgt_min(a.hse(), b.hse()), hgt_min(a.hne(), b.hne()), hgt_min(a.hne(), b.hne())};}
 };
 
 /**

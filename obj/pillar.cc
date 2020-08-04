@@ -59,10 +59,10 @@ void pillar_t::calc_image()
 		if(  grund_t *gr = welt->lookup(get_pos())  ) {
 			slope_t slope = gr->get_grund_hang();
 			if(  dir == bridge_desc_t::NS_Pillar  ) {
-				height += min(slope.sw_cnr(), slope.se_cnr() ) * TILE_HEIGHT_STEP;
+				height += min(slope.hsw(), slope.hse() ) * TILE_HEIGHT_STEP;
 			}
 			else {
-				height += min(slope.se_cnr(), slope.ne_cnr() ) * TILE_HEIGHT_STEP;
+				height += min(slope.hse(), slope.hne() ) * TILE_HEIGHT_STEP;
 			}
 			if(  height > 0  ) {
 				hide = true;

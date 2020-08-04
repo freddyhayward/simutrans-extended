@@ -1537,7 +1537,7 @@ const char *tool_setslope_t::tool_set_slope_work( player_t *player, koord3d pos,
 					welt->set_grid_hgt(k, grid_hgt );
 				}
 				else {
-					welt->set_grid_hgt(k, gr1->get_hoehe() + gr1->get_grund_hang().nw_cnr() );
+					welt->set_grid_hgt(k, gr1->get_hoehe() + gr1->get_grund_hang().hnw() );
 				}
 				reliefkarte_t::get_karte()->calc_map_pixel(k);
 
@@ -2250,18 +2250,18 @@ const char *tool_change_water_height_t::work( player_t *, koord3d pos )
 					if(  !gr2->is_water()  ) {
 						// while this appears to be a single height slope actually it is a double height slope half underwater
 						const sint8 water_hgt = welt->get_water_hgt(x, y);
-						h0_nw >= water_hgt ? h0_nw = h0 + gr2->get_grund_hang().nw_cnr() : 0;
-						h0_ne >= water_hgt ? h0_ne = h0 + gr2->get_grund_hang().ne_cnr() : 0;
-						h0_se >= water_hgt ? h0_se = h0 + gr2->get_grund_hang().se_cnr() : 0;
-						h0_sw >= water_hgt ? h0_sw = h0 + gr2->get_grund_hang().sw_cnr() : 0;
+						h0_nw >= water_hgt ? h0_nw = h0 + gr2->get_grund_hang().hnw() : 0;
+						h0_ne >= water_hgt ? h0_ne = h0 + gr2->get_grund_hang().hne() : 0;
+						h0_se >= water_hgt ? h0_se = h0 + gr2->get_grund_hang().hse() : 0;
+						h0_sw >= water_hgt ? h0_sw = h0 + gr2->get_grund_hang().hsw() : 0;
 					}
 				}
 				else {
 					// fully land
-					h0_nw = h0 + gr2->get_grund_hang().nw_cnr();
-					h0_ne = h0 + gr2->get_grund_hang().ne_cnr();
-					h0_se = h0 + gr2->get_grund_hang().se_cnr();
-					h0_sw = h0 + gr2->get_grund_hang().sw_cnr();
+					h0_nw = h0 + gr2->get_grund_hang().hnw();
+					h0_ne = h0 + gr2->get_grund_hang().hne();
+					h0_se = h0 + gr2->get_grund_hang().hse();
+					h0_sw = h0 + gr2->get_grund_hang().hsw();
 				}
 
 

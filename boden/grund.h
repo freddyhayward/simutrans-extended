@@ -400,19 +400,19 @@ public:
 	{
 		switch (corner) {
 		case slope4_t::corner_SW: {
-			return pos.z + slope.sw_cnr();
+			return pos.z + slope.hsw();
 			break;
 		}
 		case slope4_t::corner_SE: {
-			return pos.z + slope.se_cnr();
+			return pos.z + slope.hse();
 			break;
 		}
 		case slope4_t::corner_NE: {
-			return pos.z + slope.ne_cnr();
+			return pos.z + slope.hne();
 			break;
 		}
 		default: {
-			return pos.z + slope.nw_cnr();
+			return pos.z + slope.hnw();
 			break;
 		}
 		}
@@ -832,10 +832,10 @@ void display_obj_fg(const sint16 xpos, const sint16 ypos, const bool is_global, 
 		// only on slope height may changes
 		if(  !way_slope.is_flat()  ) {
 			if(ribi & ribi_t::northeast) {
-				h += way_slope.ne_cnr();
+				h += way_slope.hne();
 			}
 			else {
-				h += way_slope.sw_cnr();
+				h += way_slope.hsw();
 			}
 		}
 

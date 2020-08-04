@@ -68,7 +68,8 @@ void brueckenboden_t::rdwr(loadsave_t *file)
 	}
 	if(  file->is_saving()  &&  file->get_version() < 112007  ) {
 		// truncate double weg_hang to single weg_hang, better than nothing
-		uint8 sl = min(weg_hang.sw_cnr(), 1 ) + min(weg_hang.se_cnr(), 1 ) * 2 + min(weg_hang.ne_cnr(), 1 ) * 4 + min(weg_hang.nw_cnr(), 1 ) * 8;
+		uint8 sl = min(weg_hang.hsw(), 1 ) + min(weg_hang.hse(), 1 ) * 2 + min(weg_hang.hne(), 1 ) * 4 + min(
+                weg_hang.hnw(), 1 ) * 8;
 		file->rdwr_byte(sl);
 	}
 	else {

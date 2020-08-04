@@ -81,7 +81,7 @@ const groundobj_desc_t *groundobj_t::random_groundobj_for_climate(climate_bits c
 
 	int weight = 0;
 	FOR(  vector_tpl<groundobj_desc_t const*>,  const i,  groundobj_typen  ) {
-		if(  i->is_allowed_climate_bits(cl)  &&  (slope == slope_t() || (i->get_phases() >= slope.get_value() && i->get_image_nr(0, slope.get_value()) != IMG_EMPTY  )  )  ) {
+		if(  i->is_allowed_climate_bits(cl)  &&  (slope.is_flat() || (i->get_phases() >= slope.get_value() && i->get_image_nr(0, slope.get_value()) != IMG_EMPTY  )  )  ) {
 			weight += i->get_distribution_weight();
 		}
 	}

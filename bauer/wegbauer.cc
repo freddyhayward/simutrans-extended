@@ -1124,24 +1124,24 @@ bool way_builder_t::check_terraforming( const grund_t *from, const grund_t *to, 
 		sint8 end    = to_hgt * 2;
 		// get 3 heights - start (min start from, but should be same), middle (average end from/average start to), end (min end to)
 		if(  dir ==  koord::north  ) {
-			start  += from_slope.sw_cnr() + from_slope.se_cnr();
-			middle += from_slope.ne_cnr() + from_slope.nw_cnr();
-			end    += to_slope.ne_cnr() + to_slope.nw_cnr();
+			start  += from_slope.hsw() + from_slope.hse();
+			middle += from_slope.hne() + from_slope.hnw();
+			end    += to_slope.hne() + to_slope.hnw();
 		}
 		else if(  dir == koord::east  ) {
-			start  += from_slope.sw_cnr() + from_slope.nw_cnr();
-			middle += from_slope.se_cnr() + from_slope.ne_cnr();
-			end    += to_slope.se_cnr() + to_slope.ne_cnr();
+			start  += from_slope.hsw() + from_slope.hnw();
+			middle += from_slope.hse() + from_slope.hne();
+			end    += to_slope.hse() + to_slope.hne();
 		}
 		else if(  dir == koord::south  ) {
-			start  += from_slope.ne_cnr() + from_slope.nw_cnr();
-			middle += from_slope.sw_cnr() + from_slope.se_cnr();
-			end    += to_slope.sw_cnr() + to_slope.se_cnr();
+			start  += from_slope.hne() + from_slope.hnw();
+			middle += from_slope.hsw() + from_slope.hse();
+			end    += to_slope.hsw() + to_slope.hse();
 		}
 		else if(  dir == koord::west  ) {
-			start  += from_slope.se_cnr() + from_slope.ne_cnr();
-			middle += from_slope.sw_cnr() + from_slope.nw_cnr();
-			end    += to_slope.sw_cnr() + to_slope.nw_cnr();
+			start  += from_slope.hse() + from_slope.hne();
+			middle += from_slope.hsw() + from_slope.hnw();
+			end    += to_slope.hsw() + to_slope.hnw();
 		}
 		// work out intermediate height:
 		if(  end == start  ) {
@@ -1172,20 +1172,20 @@ bool way_builder_t::check_terraforming( const grund_t *from, const grund_t *to, 
 
 		// write middle heights
 		if(  dir == koord::north  ) {
-			*new_from_slope = slope_t(from_slope.sw_cnr(), from_slope.se_cnr(), m_from, m_from);
-			*new_to_slope =   slope_t(m_to, m_to, to_slope.ne_cnr(), to_slope.nw_cnr());
+			*new_from_slope = slope_t(from_slope.hsw(), from_slope.hse(), m_from, m_from);
+			*new_to_slope =   slope_t(m_to, m_to, to_slope.hne(), to_slope.hnw());
 		}
 		else if(  dir == koord::east  ) {
-			*new_from_slope = slope_t(from_slope.sw_cnr(), m_from, m_from, from_slope.nw_cnr());
-			*new_to_slope =   slope_t(m_to, to_slope.se_cnr(), to_slope.ne_cnr(), m_to);
+			*new_from_slope = slope_t(from_slope.hsw(), m_from, m_from, from_slope.hnw());
+			*new_to_slope =   slope_t(m_to, to_slope.hse(), to_slope.hne(), m_to);
 		}
 		else if(  dir == koord::south  ) {
-			*new_from_slope = slope_t(m_from, m_from, from_slope.ne_cnr(), from_slope.nw_cnr());
-			*new_to_slope =   slope_t(to_slope.sw_cnr(), to_slope.se_cnr(), m_to, m_to);
+			*new_from_slope = slope_t(m_from, m_from, from_slope.hne(), from_slope.hnw());
+			*new_to_slope =   slope_t(to_slope.hsw(), to_slope.hse(), m_to, m_to);
 		}
 		else if(  dir == koord::west  ) {
-			*new_from_slope = slope_t(m_from, from_slope.se_cnr(), from_slope.ne_cnr(), m_from);
-			*new_to_slope =   slope_t(to_slope.sw_cnr(), m_to, m_to, to_slope.nw_cnr());
+			*new_from_slope = slope_t(m_from, from_slope.hse(), from_slope.hne(), m_from);
+			*new_to_slope =   slope_t(to_slope.hsw(), m_to, m_to, to_slope.hnw());
 		}
 		return true;
 	}

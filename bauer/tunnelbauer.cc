@@ -163,10 +163,10 @@ koord3d tunnel_builder_t::find_end_pos(player_t *player, koord3d pos, koord zv, 
 		// steep slopes and we are appearing at the top of one
 		if(  gr->get_hoehe() == pos.z-1  &&  env_t::pak_height_conversion_factor==1  ) {
 			const slope_t new_slope = slope_type(-zv);
-			sint8 hsw = pos.z + new_slope.sw_cnr();
-			sint8 hse = pos.z + new_slope.se_cnr();
-			sint8 hne = pos.z + new_slope.ne_cnr();
-			sint8 hnw = pos.z + new_slope.nw_cnr();
+			sint8 hsw = pos.z + new_slope.hsw();
+			sint8 hse = pos.z + new_slope.hse();
+			sint8 hne = pos.z + new_slope.hne();
+			sint8 hnw = pos.z + new_slope.hnw();
 			karte_t::terraformer_t raise(welt);
 			raise.add_raise_node(pos.x, pos.y, hsw, hse, hne, hnw);
 			raise.iterate(true);
@@ -229,10 +229,10 @@ koord3d tunnel_builder_t::find_end_pos(player_t *player, koord3d pos, koord zv, 
 			if(  gr->ist_karten_boden()  &&  ( slope!=new_slope  ||  pos.z!=gr->get_pos().z )  ) {
 				// lower terrain to match - most of time shouldn't need to raise
 				// however player might have manually altered terrain so check this anyway
-				sint8 hsw = pos.z + new_slope.sw_cnr();
-				sint8 hse = pos.z + new_slope.se_cnr();
-				sint8 hne = pos.z + new_slope.ne_cnr();
-				sint8 hnw = pos.z + new_slope.nw_cnr();
+				sint8 hsw = pos.z + new_slope.hsw();
+				sint8 hse = pos.z + new_slope.hse();
+				sint8 hne = pos.z + new_slope.hne();
+				sint8 hnw = pos.z + new_slope.hnw();
 				karte_t::terraformer_t raise(welt), lower(welt);
 				raise.add_raise_node(pos.x, pos.y, hsw, hse, hne, hnw);
 				raise.iterate(false);
@@ -378,10 +378,10 @@ const char *tunnel_builder_t::build( player_t *player, koord pos, const tunnel_d
 	slope_t end_slope = slope_t(slope_type(-zv).get_value() * env_t::pak_height_conversion_factor);
 	if(  full_tunnel  &&  (!end_gr  ||  end_gr->get_grund_hang()!=end_slope)  ) {
 		// end slope not at correct height - we have already checked in find_end_pos that we can change this
-		sint8 hsw = end.z + end_slope.sw_cnr();
-		sint8 hse = end.z + end_slope.se_cnr();
-		sint8 hne = end.z + end_slope.ne_cnr();
-		sint8 hnw = end.z + end_slope.nw_cnr();
+		sint8 hsw = end.z + end_slope.hsw();
+		sint8 hse = end.z + end_slope.hse();
+		sint8 hne = end.z + end_slope.hne();
+		sint8 hnw = end.z + end_slope.hnw();
 
 		int n = 0;
 

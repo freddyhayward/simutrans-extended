@@ -294,10 +294,10 @@ static image_t* create_alpha_tile(const image_t* image_lightmap, slope_t slope, 
 	*/
 
 	// we will need them very often ...
-	const sint16 corner_sw_y = (3 * x_y) / 4 - slope.sw_cnr() * tile_raster_scale_y(TILE_HEIGHT_STEP, x_y );
-	const sint16 corner_se_y = x_y - slope.sw_cnr() * tile_raster_scale_y(TILE_HEIGHT_STEP, x_y );
-	const sint16 corner_ne_y = (3 * x_y) / 4 - slope.ne_cnr() * tile_raster_scale_y(TILE_HEIGHT_STEP, x_y );
-	const sint16 corner_nw_y = (x_y / 2) - slope.nw_cnr() * tile_raster_scale_y(TILE_HEIGHT_STEP, x_y );
+	const sint16 corner_sw_y = (3 * x_y) / 4 - slope.hsw() * tile_raster_scale_y(TILE_HEIGHT_STEP, x_y );
+	const sint16 corner_se_y = x_y - slope.hsw() * tile_raster_scale_y(TILE_HEIGHT_STEP, x_y );
+	const sint16 corner_ne_y = (3 * x_y) / 4 - slope.hne() * tile_raster_scale_y(TILE_HEIGHT_STEP, x_y );
+	const sint16 corner_nw_y = (x_y / 2) - slope.hnw() * tile_raster_scale_y(TILE_HEIGHT_STEP, x_y );
 	const sint16 middle_y = (corner_se_y + corner_nw_y) / 2;
 	// now mix the images
 	PIXVAL* dest = image_dest->get_data();

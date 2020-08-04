@@ -333,8 +333,8 @@ void baum_t::calc_off(slope_t slope, sint8 x_, sint8 y_)
 	y = y ^ (x&1);
 
 	// bilinear interpolation of tile height
-	uint32 zoff_ = ((slope.ne_cnr() * x * y + slope.nw_cnr() * x * (32 - y)
-					 + slope.se_cnr() * (32 - x) * y + slope.sw_cnr() * (32 - x) * (32 - y)) * TILE_HEIGHT_STEP) / (32 * 32);
+	uint32 zoff_ = ((slope.hne() * x * y + slope.hnw() * x * (32 - y)
+                     + slope.hse() * (32 - x) * y + slope.hsw() * (32 - x) * (32 - y)) * TILE_HEIGHT_STEP) / (32 * 32);
 	// now zoff between 0 and TILE_HEIGHT_STEP-1
 	zoff = zoff_ < (uint32)TILE_HEIGHT_STEP ? zoff_ : TILE_HEIGHT_STEP-1u;
 
