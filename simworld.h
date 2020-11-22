@@ -106,18 +106,18 @@ struct checklist_t
 	uint16 line_entry;
 	uint16 convoy_entry;
 
-	uint32 rand[CHK_RANDS];
-	uint32 debug_sum[CHK_DEBUG_SUMS];
+	uint32 rand[CHK_RANDS]{};
+	uint32 debug_sum[CHK_DEBUG_SUMS]{};
 
 
 	checklist_t(uint32 _ss, uint32 _st, uint8 _nfc, uint32 _random_seed, uint16 _halt_entry, uint16 _line_entry, uint16 _convoy_entry, uint32 *_rands, uint32 *_debug_sums);
 	checklist_t() : ss(0), st(0), nfc(0), random_seed(0), halt_entry(0), line_entry(0), convoy_entry(0)
 	{
-		for(  uint8 i = 0;  i < CHK_RANDS;  i++  ) {
-			rand[i] = 0;
+		for(uint32& i : rand) {
+			i = 0;
 		}
-		for(  uint8 i = 0;  i < CHK_DEBUG_SUMS;  i++  ) {
-			debug_sum[i] = 0;
+		for(uint32& i : debug_sum) {
+			i = 0;
 		}
 	}
 
@@ -160,7 +160,7 @@ class car_ownership_record_t
 public:
 	sint64 year;
 	sint16 ownership_percent;
-	car_ownership_record_t( sint64 y = 0, sint16 ownership = 0 )
+	explicit car_ownership_record_t( sint64 y = 0, sint16 ownership = 0 )
 	{
 		year = y * 12;
 		ownership_percent = ownership;
@@ -171,7 +171,7 @@ class transferring_cargo_t
 {
 public:
 	ware_t ware;
-	sint64 ready_time;
+	sint64 ready_time{};
 
 	bool operator ==(const transferring_cargo_t& o)
 	{
@@ -205,8 +205,8 @@ public:
 	 * @param amplitude in 0..160.0 top height of mountains, may not exceed 160.0!!!
 	 * @author Hj. Malthaner
 	 */
-	static sint32 perlin_hoehe(settings_t const*, koord pos, koord const size, sint32 map_size_max);
-	sint32 perlin_hoehe(settings_t const*, koord pos, koord const size);
+	static sint32 perlin_hoehe(settings_t const*, koord pos, koord size, sint32 map_size_max);
+	sint32 perlin_hoehe(settings_t const*, koord pos, koord size);
 
 	/**
 	 * Loops over tiles setting heights from perlin noise
@@ -805,14 +805,14 @@ private:
 	 * It's now an extra function so we don't need the code twice.
 	 * @author Gerd Wachsmuth, neroden
 	 */
-	void distribute_groundobjs_cities(settings_t const * const set, sint16 old_x, sint16 old_y);
+	void distribute_groundobjs_cities(settings_t const * set, sint16 old_x, sint16 old_y);
 
 	/**
 	 * Distribute just the cities.  Subroutine of distribute_groundobjs_cities.
 	 * Skipped if no cities are being built.
 	 * @author Gerd Wachsmuth, neroden
 	 */
-	void distribute_cities(settings_t const * const set, sint16 old_x, sint16 old_y);
+	void distribute_cities(settings_t const * set, sint16 old_x, sint16 old_y);
 
 	// Used for detecting whether paths/connexions are stale.
 	// @author: jamespetts
@@ -960,8 +960,8 @@ private:
 	struct destination
 	{
 		koord location;
-		uint16 type;
-		gebaeude_t* building;
+		uint16 type{};
+		gebaeude_t* building{};
 	};
 
 	/**
@@ -970,7 +970,7 @@ private:
 	*/
 	void step_passengers_and_mail(uint32 delta_t);
 
-	sint32 calc_adjusted_step_interval(const uint32 weight, uint32 trips_per_month_hundredths) const;
+	sint32 calc_adjusted_step_interval(uint32 weight, uint32 trips_per_month_hundredths) const;
 
 	sint32 generate_passengers_or_mail(const goods_desc_t * wtyp);
 
@@ -1218,13 +1218,13 @@ public:
 	 * Marks an area using the grund_t mark flag.
 	 * @author prissi
 	 */
-	void mark_area( const koord3d center, const koord radius, const bool mark ) const;
+	void mark_area( koord3d center, koord radius, bool mark ) const;
 
 	/**
 	 * Player management here
 	 */
 	uint8 sp2num(player_t *player);
-	player_t * get_player(uint8 n) const { return players[n&15]; }
+	player_t * get_player(uint8 n) const { return players[n&15u]; }
 	player_t* get_active_player() const { return active_player; }
 	uint8 get_active_player_nr() const { return active_player_nr; }
 	void switch_active_player(uint8 nr, bool silent);
@@ -1299,7 +1299,7 @@ public:
 	 */
 	sint64 ticks_per_world_month;
 
-	void set_ticks_per_world_month_shift(sint16 bits) {ticks_per_world_month_shift = bits; ticks_per_world_month = (1LL << ticks_per_world_month_shift); }
+	void set_ticks_per_world_month_shift(sint16 bits) {ticks_per_world_month_shift = bits; ticks_per_world_month = 1u << ticks_per_world_month_shift; }
 
 	/**
 	 * Converts speed (yards per tick) into tiles per month
@@ -1314,29 +1314,13 @@ public:
 	 */
 	uint32 speed_to_tiles_per_month(uint32 speed) const
 	{
-		const int left_shift = (int)(ticks_per_world_month_shift - YARDS_PER_TILE_SHIFT);
+		const sint32 left_shift = ticks_per_world_month_shift - YARDS_PER_TILE_SHIFT;
 		if (left_shift >= 0) {
-			return speed << left_shift;
+			return speed << (uint32)left_shift;
 		} else {
-			const int right_shift = -left_shift;
+			const uint32 right_shift = -left_shift; // will always be > 0
 			// round to nearest
-			return (speed + (1<<(right_shift -1)) ) >> right_shift;
-		}
-	}
-
-	/**
-	 * Scales value proportionally with month length.
-	 * Used to scale monthly maintenance costs and factory production.
-	 * @returns value << ( ticks_per_world_month_shift -18 )
-	 * DEPRECATED - use calc_adjusted_montly_figure() instead
-	 */
-	sint64 scale_with_month_length(sint64 value)
-	{
-		const int left_shift = ticks_per_world_month_shift - (sint64)get_settings().get_base_bits_per_month();
-		if (left_shift >= 0) {
-			return value << left_shift;
-		} else {
-			return value >> (-left_shift);
+			return (speed + (1u<<(right_shift - 1)) ) >> right_shift;
 		}
 	}
 
@@ -1347,11 +1331,11 @@ public:
 	 */
 	sint64 inverse_scale_with_month_length(sint64 value)
 	{
-		const int left_shift = (sint64)get_settings().get_base_bits_per_month() - ticks_per_world_month_shift;
+		const sint32 left_shift = get_settings().get_base_bits_per_month() - ticks_per_world_month_shift;
 		if (left_shift >= 0) {
-			return value << left_shift;
+			return value * (1u << (uint32)left_shift);
 		} else {
-			return value >> (-left_shift);
+			return value * (1u >> (uint32)(-left_shift));
 		}
 	}
 
@@ -1419,28 +1403,28 @@ public:
 	sint32 calc_adjusted_monthly_figure(sint32 nominal_monthly_figure) const
 	{
 		// Adjust for meters per tile
-		const sint32 base_meters_per_tile = (sint32)get_settings().get_base_meters_per_tile();
-		const uint32 base_bits_per_month = (sint32)get_settings().get_base_bits_per_month();
+		const sint32 base_meters_per_tile = get_settings().get_base_meters_per_tile();
+		const uint32 base_bits_per_month = get_settings().get_base_bits_per_month();
 		const sint32 adjustment_factor = base_meters_per_tile / (sint32)get_settings().get_meters_per_tile();
 
 		// Adjust for bits per month
 		if(ticks_per_world_month_shift >= base_bits_per_month)
 		{
-			const sint32 adjusted_monthly_figure = (sint32)(nominal_monthly_figure << (ticks_per_world_month_shift - base_bits_per_month));
+			const sint32 adjusted_monthly_figure = nominal_monthly_figure * (1u << (uint32)(ticks_per_world_month_shift - base_bits_per_month));
 			return adjusted_monthly_figure / adjustment_factor;
 		}
 		else
 		{
 			const sint32 adjusted_monthly_figure = nominal_monthly_figure / adjustment_factor;
-			return (sint32)(adjusted_monthly_figure >> (base_bits_per_month - ticks_per_world_month_shift));
+			return adjusted_monthly_figure * (1u >> (uint32)(base_bits_per_month - ticks_per_world_month_shift));
 		}
 	}
 
 	sint64 calc_adjusted_monthly_figure(sint64 nominal_monthly_figure) const
 	{
 		// Adjust for meters per tile
-		const sint64 base_meters_per_tile = (sint64)get_settings().get_base_meters_per_tile();
-		const sint64 base_bits_per_month = (sint64)get_settings().get_base_bits_per_month();
+		const sint64 base_meters_per_tile = get_settings().get_base_meters_per_tile();
+		const sint64 base_bits_per_month = get_settings().get_base_bits_per_month();
 		const sint64 adjustment_factor = base_meters_per_tile / (sint64)get_settings().get_meters_per_tile();
 
 		// Adjust for bits per month
@@ -1450,12 +1434,12 @@ public:
 			{
 				// This situation can lead to loss of precision.
 				const sint64 adjusted_monthly_figure = (nominal_monthly_figure * 100ll) / adjustment_factor;
-				return (adjusted_monthly_figure * (1ull << (ticks_per_world_month_shift - base_bits_per_month))) / 100ll;
+				return adjusted_monthly_figure * (1u << (uint32)(ticks_per_world_month_shift - base_bits_per_month)) / 100ll;
 			}
 			else
 			{
 				const sint64 adjusted_monthly_figure = nominal_monthly_figure / adjustment_factor;
-				return (adjusted_monthly_figure * (1ull << (ticks_per_world_month_shift - base_bits_per_month)));
+				return adjusted_monthly_figure * (1u << (uint32)(ticks_per_world_month_shift - base_bits_per_month));
 			}
 		}
 		else
@@ -1464,12 +1448,12 @@ public:
 			{
 				// This situation can lead to loss of precision.
 				const sint64 adjusted_monthly_figure = (nominal_monthly_figure * 100ll) / adjustment_factor;
-				return (adjusted_monthly_figure >> (base_bits_per_month - ticks_per_world_month_shift)) / 100ll;
+				return (adjusted_monthly_figure * (1u >> (uint32)(base_bits_per_month - ticks_per_world_month_shift))) / 100ll;
 			}
 			else
 			{
 				const sint64 adjusted_monthly_figure = nominal_monthly_figure / adjustment_factor;
-				return adjusted_monthly_figure >> (base_bits_per_month - ticks_per_world_month_shift);
+				return adjusted_monthly_figure * (1u >> (uint32)(base_bits_per_month - ticks_per_world_month_shift));
 			}
 		}
 	}
@@ -1477,8 +1461,8 @@ public:
 	uint64 calc_adjusted_monthly_figure(uint64 nominal_monthly_figure) const
 	{
 		// Adjust for meters per tile
-		const uint64 base_meters_per_tile = (uint64)get_settings().get_base_meters_per_tile();
-		const uint64 base_bits_per_month = (uint64)get_settings().get_base_bits_per_month();
+		const uint64 base_meters_per_tile = get_settings().get_base_meters_per_tile();
+		const uint64 base_bits_per_month = get_settings().get_base_bits_per_month();
 		const uint64 adjustment_factor = base_meters_per_tile / (uint64)get_settings().get_meters_per_tile();
 
 		// Adjust for bits per month
@@ -1504,44 +1488,44 @@ public:
 		// Adjust for bits per month
 		if(ticks_per_world_month_shift >= base_bits_per_month)
 		{
-			const uint32 adjusted_monthly_figure = (uint32)(nominal_monthly_figure << (ticks_per_world_month_shift - base_bits_per_month));
+			const uint32 adjusted_monthly_figure = nominal_monthly_figure << (ticks_per_world_month_shift - base_bits_per_month);
 			return adjusted_monthly_figure / adjustment_factor;
 		}
 		else
 		{
 			const uint32 adjusted_monthly_figure = nominal_monthly_figure / adjustment_factor;
-			return (uint32)(adjusted_monthly_figure >> (base_bits_per_month - ticks_per_world_month_shift));
+			return adjusted_monthly_figure >> (base_bits_per_month - ticks_per_world_month_shift);
 		}
 	}
 
 	uint64 scale_for_distance_only(uint64 value) const
 	{
-		const uint64 base_meters_per_tile = (uint64)get_settings().get_base_meters_per_tile();
-		const uint64 set_meters_per_tile = (uint64)get_settings().get_meters_per_tile();
+		const uint64 base_meters_per_tile = get_settings().get_base_meters_per_tile();
+		const uint64 set_meters_per_tile = get_settings().get_meters_per_tile();
 
 		return (value * set_meters_per_tile) / base_meters_per_tile;
 	}
 
 	uint32 scale_for_distance_only(uint32 value) const
 	{
-		const uint32 base_meters_per_tile = (uint32)get_settings().get_base_meters_per_tile();
-		const uint32 adjustment_factor = base_meters_per_tile / (uint32)get_settings().get_meters_per_tile();
+		const uint32 base_meters_per_tile = get_settings().get_base_meters_per_tile();
+		const uint32 adjustment_factor = base_meters_per_tile / get_settings().get_meters_per_tile();
 
 		return value / adjustment_factor;
 	}
 
 	sint32 scale_for_distance_only(sint32 value) const
 	{
-		const sint32 base_meters_per_tile = (sint32)get_settings().get_base_meters_per_tile();
-		const sint32 adjustment_factor = base_meters_per_tile / (sint32)get_settings().get_meters_per_tile();
+		const sint32 base_meters_per_tile = get_settings().get_base_meters_per_tile();
+		const sint32 adjustment_factor = base_meters_per_tile / get_settings().get_meters_per_tile();
 
 		return value / adjustment_factor;
 	}
 
 	sint64 scale_for_distance_only(sint64 value) const
 	{
-		const sint64 base_meters_per_tile = (sint64)get_settings().get_base_meters_per_tile();
-		const sint64 adjustment_factor = base_meters_per_tile / (sint64)get_settings().get_meters_per_tile();
+		const sint64 base_meters_per_tile = get_settings().get_base_meters_per_tile();
+		const sint64 adjustment_factor = base_meters_per_tile / get_settings().get_meters_per_tile();
 
 		return value / adjustment_factor;
 	}
@@ -1550,16 +1534,16 @@ public:
 	 * Standard timing conversion
 	 * @author: jamespetts
 	 */
-	inline sint64 ticks_to_tenths_of_minutes(sint64 ticks) const
+	inline sint64 ticks_to_tenths_of_minutes(sint64 _ticks) const
 	{
-		return ticks_to_seconds(ticks) / 6L;
+		return ticks_to_seconds(_ticks) / 6L;
 	}
 
 	/**
 	 * Finer timing conversion for UI only
 	 * @author: jamespetts
 	 */
-	inline sint64 ticks_to_seconds(sint64 ticks) const
+	inline sint64 ticks_to_seconds(sint64 _ticks) const
 	{
 		/*
 		 * Currently this is altered according to meters_per_tile / 1000.
@@ -1571,7 +1555,7 @@ public:
 		 * This also needs to be changed because it's stupid; it's based on
 		 * old settings which are now in simunits.h
 		 */
-		return get_settings().get_meters_per_tile() * ticks * 30L * 6L / (4096L * 1000L);
+		return get_settings().get_meters_per_tile() * _ticks * 30L * 6L / (4096L * 1000L);
 	}
 #ifndef NETTOOL
 	/**
@@ -1618,7 +1602,7 @@ public:
 
 	/// Returns the region of the selected co-ordinate.
 	uint8 get_region(koord k) const;
-	static uint8 get_region(koord k, settings_t const* const sets);
+	static uint8 get_region(koord k, settings_t const* sets);
 
 	/// Returns the region name of the selected co-ordinate
 	std::string get_region_name(koord k) const;
@@ -1663,7 +1647,7 @@ private:
 		// effectively sets movement_denominator to 2^8 = 128
 		movement_denominator_shift = 8;
 		// Save confusion within this method: this will be optimized out
-		const uint32 movement_denominator = 1 << movement_denominator_shift;
+		const uint32 movement_denominator = 1u << movement_denominator_shift;
 
 		/*
 		 * Follow the logic:
@@ -1785,7 +1769,7 @@ public:
 	 *
 	 * @author: Bernd Gabriel, 14.06.2009
 	 */
-	int get_yearsteps() { return (int) ((current_month % 12) * 8 + ((ticks >> (ticks_per_world_month_shift-3)) & 7)); }
+	int get_yearsteps() const { return (int) ((current_month % 12) * 8 + ((ticks >> (ticks_per_world_month_shift-3)) & 7)); }
 
 	/**
 	 * prissi: current city road.
@@ -1840,7 +1824,7 @@ public:
 	 * Returns the maximum allowed world height.
 	 * @author Hj. Malthaner
 	 */
-	sint8 get_maximumheight() const { return 32; }
+	static sint8 get_maximumheight() { return 32; }
 
 	/**
 	 * Returns the current snowline height.
@@ -1867,7 +1851,7 @@ public:
 	* Helper methods used for runway construction to check
 	* the exclusion zone of 1 tile around a runway.
 	*/
-	struct runway_info { ribi_t::ribi direction; koord pos; };
+	struct runway_info { ribi_t::ribi direction{}; koord pos; };
 	runway_info check_nearby_runways(koord pos);
 	bool check_neighbouring_objects(koord pos);
 
@@ -1919,8 +1903,8 @@ public:
 			plan->set_climate(cl);
 			if(  recalc  ) {
 				recalc_transitions(k);
-				for(  int i = 0;  i < 8;  i++  ) {
-					recalc_transitions( k + koord::neighbours[i] );
+				for(koord neighbour : koord::neighbours) {
+					recalc_transitions( k + neighbour );
 				}
 			}
 		}
@@ -2161,13 +2145,13 @@ public:
 	 * @note Uses the corner height for the best slope.
 	 * @author prissi
 	 */
-	uint8	recalc_natural_slope( const koord k, sint8 &new_height ) const;
+	uint8	recalc_natural_slope( koord k, sint8 &new_height ) const;
 
 	/**
 	 * Returns the natural slope a a position using the grid.
 	 * @note No checking, and only using the grind for calculation.
 	 */
-	uint8	calc_natural_slope( const koord k ) const;
+	uint8	calc_natural_slope( koord k ) const;
 
 	// Getter/setter methods for maintaining the industry density
 	inline uint32 get_target_industry_density() const { return ((uint32)finance_history_month[0][WORLD_CITICENS] * (sint64)industry_density_proportion) / 1000000ll; }
@@ -2252,7 +2236,7 @@ public:
 		struct node_t {
 			sint16 x;    ///< x-coordinate
 			sint16 y;    ///< y-coordinate
-			sint8  h[4]; ///< height of corners, order: sw se ne nw
+			sint8  h[4]{}; ///< height of corners, order: sw se ne nw
 			uint8  changed;
 
 			node_t(sint16 x_, sint16 y_, sint8 hsw, sint8 hse, sint8 hne, sint8 hnw, uint8 c)
@@ -2268,13 +2252,13 @@ public:
 		};
 
 		vector_tpl<node_t> list; ///< list of affected tiles
-		uint8 actual_flag;       ///< internal flag to iterate through list
-		bool ready;              ///< internal flag to signal iteration ready
+		uint8 actual_flag{};       ///< internal flag to iterate through list
+		bool ready{};              ///< internal flag to signal iteration ready
 		karte_t* welt;
 
 		void add_node(bool raise, sint16 x, sint16 y, sint8 hsw, sint8 hse, sint8 hne, sint8 hnw);
 	public:
-		terraformer_t(karte_t* w) { init(); welt = w; }
+		explicit terraformer_t(karte_t* w) { init(); welt = w; }
 
 		void init() { list.clear(); actual_flag = 1; ready = false; }
 
@@ -2488,7 +2472,7 @@ public:
 	 * Fills array with corner heights of neighbours
 	 * @author Kieron Green
 	 */
-	void get_neighbour_heights(const koord k, sint8 neighbour_height[8][4]) const;
+	void get_neighbour_heights(koord k, sint8 neighbour_height[8][4]) const;
 
 	/**
 	 * Calculates appropriate climate for a tile
@@ -2587,7 +2571,7 @@ public:
 	 * @param Filename name of the file to write.
 	 * @author Hj. Malthaner
 	 */
-	void save(const char *filename, const loadsave_t::mode_t savemode, const char *version, const char *ex_version, const char* ex_revision, bool silent);
+	void save(const char *filename, loadsave_t::mode_t savemode, const char *version, const char *ex_version, const char* ex_revision, bool silent);
 
 	/**
 	 * Loads a map from a file.
@@ -2677,7 +2661,7 @@ public:
 	 * Time printing routines.
 	 * Should be inlined.
 	 */
-	inline void sprintf_time_secs(char *p, size_t size, uint32 seconds) const
+	static inline void sprintf_time_secs(char *p, size_t size, uint32 seconds)
 	{
 		unsigned int minutes = seconds / 60;
 		unsigned int hours = minutes / 60;
@@ -2703,11 +2687,10 @@ public:
 
 	inline void sprintf_ticks(char *p, size_t size, sint64 ticks) const
 	{
-		uint32 seconds = (uint32)ticks_to_seconds(ticks);
-		sprintf_time_secs(p, size, seconds);
+		sprintf_time_secs(p, size, (uint32) ticks_to_seconds(ticks));
 	}
 
-	inline void sprintf_time_tenths(char* p, size_t size, uint32 tenths) const
+	static inline void sprintf_time_tenths(char* p, size_t size, uint32 tenths)
 	{
 		sprintf_time_secs(p, size, 6 * tenths);
 	}
@@ -2765,7 +2748,7 @@ public:
 		return *karte_t::world;
 	}
 
-	karte_ptr_t() {}
+	karte_ptr_t() = default;
 	/// dereference operator: karte_ptr_t can be used as it would be karte_t*
 	karte_t* operator->() {
 		assert( karte_t::world );
@@ -2777,12 +2760,12 @@ public:
 	}
 
 	/// cast to karte_t*
-	operator karte_t* () const { return karte_t::world; }
+	explicit operator karte_t* () const { return karte_t::world; }
 private:
 	karte_ptr_t(const karte_ptr_t&);
 	karte_ptr_t& operator=(const karte_ptr_t&);
 	// no cast to bool please
-	operator bool () const;
+	explicit operator bool () const;
 };
 
 #endif

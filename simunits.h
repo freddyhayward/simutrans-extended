@@ -96,8 +96,8 @@
  * This is 256, and making it larger would require changing datatypes within
  * vehicle_t.
  */
-#define VEHICLE_STEPS_PER_TILE (256)
-#define VEHICLE_STEPS_PER_TILE_SHIFT (8)
+#define VEHICLE_STEPS_PER_TILE (256u)
+#define VEHICLE_STEPS_PER_TILE_SHIFT (8u)
 
 /*
  * Shift from yards to tiles, derived quantity
