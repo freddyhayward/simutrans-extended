@@ -58,7 +58,6 @@ static pthread_mutexattr_t mutex_attributes;
  */
 vector_tpl <weg_t *> alle_wege;
 
-static slist_tpl<std::tuple<weg_t*, uint32, uint32>> pending_road_travel_time_updates;
 /**
  * Get list of all ways
  */
@@ -319,11 +318,6 @@ void weg_t::init_statistics()
 			statistics[month][type] = 0;
 		}
 	}
-	for(  int type=0;  type<MAX_WAY_TRAVEL_TIMES;  type++  ) {
-		for(  int month=0;  month<MAX_WAY_STAT_MONTHS;  month++  ) {
-			travel_times[month][type] = 0;
-		}
-	}
 	creation_month_year = welt->get_timeline_year_month();
 }
 
@@ -349,7 +343,6 @@ void weg_t::init()
 	replacement_way = NULL;
 #ifdef MULTI_THREAD
 	pthread_mutexattr_init(&mutex_attributes);
-	pthread_mutex_init(&private_car_store_route_mutex, &mutex_attributes);
 #endif
 }
 
@@ -358,11 +351,6 @@ weg_t::~weg_t()
 {
 	if (!welt->is_destroying())
 	{
-#ifdef MULTI_THREAD
-		welt->await_private_car_threads();
-#endif
-		delete_all_routes_from_here();
-
 		alle_wege.remove(this);
 		player_t *player = get_owner();
 		if (player  &&  desc)
@@ -376,9 +364,6 @@ weg_t::~weg_t()
 			player_t::add_maintenance(player, -maint, desc->get_finance_waytype());
 		}
 	}
-#ifdef MULTI_THREAD
-	pthread_mutex_destroy(&private_car_store_route_mutex);
-#endif
 }
 
 
@@ -426,50 +411,24 @@ void weg_t::rdwr(loadsave_t *file)
 		}
 	}
 
-
-	if (file->is_loading() && ((file->get_extended_version() < 14) || (file->get_extended_version() == 14 && file->get_extended_revision() < 19)))
+	// This block used to estimate travel times from the deprecated stopped vehicles. Now that strasse/weg is being refactored, there is a near-zero chance that this block will actually be relevant, hence it will now discard the value;
+	if(file->is_loading() && file->get_extended_version() == 14 && file->get_extended_revision() >= 19 && file->get_extended_revision() < 24)
 	{
-		// Very early version - initialise the travel time statistics
-		for(uint32 type = 0; type < MAX_WAY_TRAVEL_TIMES; type++)
-		{
-			for (uint32 month = 0; month < MAX_WAY_STAT_MONTHS; month++)
-			{
-				travel_times[month][type] = 0;
-			}
-		}
-	}
-
-	// NOTE: Revision 24 refers to the travel-time-congestion patch - if other patches that increment this number are merged first, then this must be updated too.
-	else if(file->is_loading() && file->get_extended_version() == 14 && file->get_extended_revision() >= 19 && file->get_extended_revision() < 24)
-	{
-		// Older version - estimate travel time statistics from deprecated stopped vehicle statistics
-		// Use 10 seconds as the base time to cross the way ? the actual value is not important at all but the ratio is.
-		uint32 mul = welt->get_seconds_to_ticks(10);
-
 		for (uint32 month = 0; month < MAX_WAY_STAT_MONTHS; month++)
 		{
-			uint32 w = travel_times[month][WAY_TRAVEL_TIME_ACTUAL];
-
-			// Get the now-deprecated stopped vehicles count
-			file->rdwr_long(w);
-
-			travel_times[month][WAY_TRAVEL_TIME_IDEAL] = statistics[month][WAY_STAT_CONVOIS] * mul;
-
-			// We'll estimate a stopped vehicle to take twice longer than usual to cross the tile
-			travel_times[month][WAY_TRAVEL_TIME_ACTUAL] = (statistics[month][WAY_STAT_CONVOIS] + (uint32)w) * mul;
+			uint32 dummy;
+			file->rdwr_long(dummy);
 		}
 	}
-
-	// NOTE: Revision 24 refers to the travel-time-congestion patch - if other patches that increment this number are merged first, then this must be updated too.
-	else if ((file->get_extended_version() >= 15) || (file->get_extended_version() == 14 && file->get_extended_revision() >= 24))
+	else if (file->get_extended_version() == 14 && file->get_extended_revision() >= 24 && file->get_extended_revision() < 33)
 	{
-		for(uint32 type = 0; type < MAX_WAY_TRAVEL_TIMES; type++)
+		for(uint32 type = 0; type < 2; type++)
 		{
-			for (uint32 month = 0; month < MAX_WAY_STAT_MONTHS; month++)
+			for (auto & travel_time : ((strasse_t*)this)->travel_times)
 			{
-				uint32 w = travel_times[month][type];
+				uint32 w;
 				file->rdwr_long(w);
-				travel_times[month][type] = (uint32)w;
+				if(get_waytype()==road_wt){travel_time[type] = w;}
 			}
 		}
 	}
@@ -520,28 +479,15 @@ void weg_t::rdwr(loadsave_t *file)
 		degraded = deg;
 #endif
 
-		if (file->get_extended_version() >= 15 || (file->get_extended_version() >= 14 && file->get_extended_revision() >= 19))
+		if (file->get_extended_version() == 14 && file->get_extended_revision() >= 19 && file->get_extended_revision() < 33)
 		{
 			const uint32 route_array_number = file->get_extended_version() >= 15 || file->get_extended_revision() >= 20 ? 2 : 1;
 
-			if (file->is_saving())
+			if (file->is_loading())
 			{
-				for (uint32 i = 0; i < route_array_number; i++)
-				{
-					uint32 private_car_routes_count = private_car_routes[i].get_count();
-					file->rdwr_long(private_car_routes_count);
-					FOR(private_car_route_map, element, private_car_routes[i])
-					{
-						koord destination = element.key;
-						koord3d next_tile = element.value;
+				strasse_t::private_car_route_map dummy[route_array_number];
 
-						destination.rdwr(file);
-						next_tile.rdwr(file);
-					}
-				}
-			}
-			else // Loading
-			{
+				strasse_t::private_car_route_map* private_car_routes = get_waytype()==road_wt ? ((strasse_t*)this)->private_car_routes : dummy;
 				for (uint32 i = 0; i < route_array_number; i++)
 				{
 					uint32 private_car_routes_count = 0;
@@ -669,45 +615,6 @@ void weg_t::info(cbuffer_t & buf) const
 			buf.append(bridge_weight_limit);
 			buf.append(translator::translate("tonnen"));
 			buf.append("\n");
-		}
-		// Private car routes from here
-		if (wtyp == road_wt)
-		{
-			buf.append("\n");
-			// TODO: Add translator entry for this text
-			buf.append(translator::translate("Road routes from here:"));
-			buf.append("\n");
-
-			uint32 cities_count = 0;
-			uint32 buildings_count = 0;
-			FOR(private_car_route_map, const& route, private_car_routes[private_car_routes_currently_reading_element])
-			{
-
-				const grund_t* gr = welt->lookup_kartenboden(route.key);
-				const gebaeude_t* building = gr ? gr->get_building() : NULL;
-				if (building)
-				{
-					buildings_count++;
-#ifdef DEBUG
-					buf.append("\n");
-					buf.append(translator::translate(building->get_individual_name()));
-#endif
-				}
-
-				const stadt_t* city = welt->get_city(route.key);
-				if (city && route.key == city->get_townhall_road())
-				{
-					cities_count++;
-#ifdef DEBUG
-					buf.append("\n");
-					buf.append(city->get_name());
-#endif
-				}
-			}
-#ifdef DEBUG
-			buf.printf("\n");
-#endif
-			buf.printf("%u buildings\n%u cities\n\n", buildings_count, cities_count);
 		}
 	}
 
@@ -1030,42 +937,9 @@ void weg_t::info(cbuffer_t & buf) const
 	buf.append("\n");
 #endif
 
-	if(  get_waytype() == road_wt  ) {
-		const strasse_t* str = static_cast<const strasse_t*>(this);
-		assert(str);
-		// Display overtaking_info
-		buf.printf("%s: ", translator::translate("overtaking"));
-		switch (str->get_overtaking_mode()) {
-			case halt_mode:
-				buf.append(translator::translate("halt mode"));
-				break;
-			case oneway_mode:
-				buf.append(translator::translate("oneway"));
-				break;
-			case twoway_mode:
-				buf.append(translator::translate("twoway"));
-				break;
-			case prohibited_mode:
-				buf.append(translator::translate("prohibited"));
-				break;
-			default:
-				buf.append(translator::translate("ERROR"));
-				break;
-		}
-		buf.append("\n");
-	}
-
 #ifndef DEBUG_WAY_STATS
 	//buf.append("\n");
 	buf.printf(translator::translate("convoi passed last\nmonth %i\n"), statistics[1][1]);
-
-	if (desc->get_waytype() == road_wt)
-	{
-		buf.printf("\n");
-		buf.printf(translator::translate("Congestion: %i%%"), get_congestion_percentage()); // TODO: Set up this text for translating
-		buf.printf("\n");
-	}
-
 #else
 	// Debug - output stats
 	buf.append("\n");
@@ -1391,18 +1265,6 @@ void weg_t::calc_image()
 	pthread_mutex_lock( &weg_calc_image_mutex );
 #endif
 
-#ifdef DEBUG_PRIVATE_CAR_ROUTES
-	if (private_car_routes[private_car_routes_currently_reading_element].empty())
-	{
-		set_image(IMG_EMPTY);
-		set_after_image(IMG_EMPTY);
-#ifdef MULTI_THREAD
-		pthread_mutex_unlock(&weg_calc_image_mutex);
-#endif
-		return;
-	}
-#endif
-
 	grund_t *from = welt->lookup(get_pos());
 	grund_t *to;
 	image_id old_image = image;
@@ -1558,12 +1420,6 @@ void weg_t::new_month()
 		statistics[0][type] = 0;
 	}
 
-	for (int type=0; type<MAX_WAY_TRAVEL_TIMES; type++) {
-		for (int month=MAX_WAY_STAT_MONTHS-1; month>0; month--) {
-			travel_times[month][type] = travel_times[month-1][type];
-		}
-		travel_times[0][type] = 0;
-	}
 	wear_way(desc->get_monthly_base_wear());
 }
 
@@ -1873,110 +1729,3 @@ signal_t *weg_t::get_signal(ribi_t::ribi direction_of_travel) const
 	else return NULL;
 }
 
-void weg_t::add_private_car_route(koord destination, koord3d next_tile)
-{
-#ifdef MULTI_THREAD
-	int error = pthread_mutex_lock(&private_car_store_route_mutex);
-	assert(error == 0);
-	(void)error;
-#endif
-	private_car_routes[get_private_car_routes_currently_writing_element()].set(destination, next_tile);
-
-	//private_car_routes_std[get_private_car_routes_currently_writing_element()].emplace(destination, next_tile); // Old performance test - but this was worse than the Simutrans type
-#ifdef MULTI_THREAD
-	error = pthread_mutex_unlock(&private_car_store_route_mutex);
-	assert(error == 0);
-#endif
-#ifdef DEBUG_PRIVATE_CAR_ROUTES
-	calc_image();
-#endif
-}
-
-void weg_t::delete_all_routes_from_here(bool reading_set)
-{
-	const uint32 routes_index = reading_set ? private_car_routes_currently_reading_element : get_private_car_routes_currently_writing_element();
-
-	if (!private_car_routes[routes_index].empty())
-	{
-		vector_tpl<koord> destinations_to_delete;
-		FOR(private_car_route_map, const& route, private_car_routes[routes_index])
-		{
-			koord dest = route.key;
-			destinations_to_delete.append(dest);
-		}
-
-		FOR(vector_tpl<koord>, dest, destinations_to_delete)
-		{
-			// This must be done in a two stage process to avoid memory corruption as the delete_route_to function will affect the very hashtable being iterated.
-			delete_route_to(dest, reading_set);
-		}
-	}
-#ifdef DEBUG_PRIVATE_CAR_ROUTES
-	calc_image();
-#endif
-}
-
-void weg_t::delete_route_to(koord destination, bool reading_set)
-{
-	const uint32 routes_index = reading_set ? private_car_routes_currently_reading_element : get_private_car_routes_currently_writing_element();
-
-	koord3d next_tile = get_pos();
-	koord3d this_tile = next_tile;
-	while (next_tile != koord3d::invalid && next_tile != koord3d(0, 0, 0))
-	{
-		const grund_t* gr = welt->lookup(next_tile);
-
-		next_tile = koord3d::invalid;
-		if (gr)
-		{
-			weg_t* const w = gr->get_weg(road_wt);
-			if (w)
-			{
-				next_tile = w->private_car_routes[routes_index].get(destination);
-				w->remove_private_car_route(destination, reading_set);
-			}
-		}
-		if (this_tile == next_tile)
-		{
-			break;
-		}
-		this_tile = next_tile;
-	}
-}
-
-void weg_t::remove_private_car_route(koord destination, bool reading_set)
-{
-	const uint32 routes_index = reading_set ? private_car_routes_currently_reading_element : get_private_car_routes_currently_writing_element();
-#ifdef MULTI_THREAD
-	int error = pthread_mutex_lock(&private_car_store_route_mutex);
-	assert(error == 0);
-	(void)error;
-#endif
-	private_car_routes[routes_index].remove(destination);
-	//private_car_routes_std[routes_index].erase(destination); // Old test - but this was much slower than the Simutrans hashtable.
-#ifdef MULTI_THREAD
-	error = pthread_mutex_unlock(&private_car_store_route_mutex);
-	assert(error == 0);
-	(void)error;
-#endif
-
-}
-void weg_t::add_travel_time_update(weg_t* w, uint32 actual, uint32 ideal) {
-	pending_road_travel_time_updates.append(std::make_tuple(w, actual, ideal));
-}
-
-void weg_t::apply_travel_time_updates() {
-	while(!pending_road_travel_time_updates.empty() ) {
-		weg_t* str;
-		uint32 actual;
-		uint32 ideal;
-		std::tie(str, actual, ideal) = pending_road_travel_time_updates.remove_first();
-		if(str) {
-			str->update_travel_times(actual,ideal);
-		}
-	}
-}
-
-void weg_t::clear_travel_time_updates() {
-	pending_road_travel_time_updates.clear();
-}

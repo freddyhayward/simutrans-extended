@@ -338,11 +338,11 @@ bool route_t::find_route(karte_t *welt, const koord3d start, test_driver_t *tdri
 					destination_city = NULL;
 				}
 
-				weg_t* way = gr->get_weg(road_wt);
+				strasse_t* str = (strasse_t*)gr->get_weg(road_wt);
 
-				if(way && way->connected_buildings.get_count() > 0)
+				if(str && str->connected_buildings.get_count() > 0)
 				{
-					FOR(minivec_tpl<gebaeude_t*>, const gb, way->connected_buildings)
+					FOR(minivec_tpl<gebaeude_t*>, const gb, str->connected_buildings)
 					{
 						if(!gb)
 						{
@@ -434,13 +434,13 @@ bool route_t::find_route(karte_t *welt, const koord3d start, test_driver_t *tdri
 			const koord city_destination_pos = destination_city ? destination_city->get_townhall_road() : koord::invalid;
 
 			koord3d previous = koord3d::invalid;
-			weg_t* w;
+			strasse_t* str;
 			while (tmp != NULL)
 			{
 				private_car_route_step_counter++;
-				w = tmp->gr->get_weg(road_wt);
+				str = (strasse_t*)tmp->gr->get_weg(road_wt);
 
-				if (w)
+				if (str)
 				{
 					// The route is added here in a different array index to the set of routes
 					// that are currently being read.
@@ -449,17 +449,17 @@ bool route_t::find_route(karte_t *welt, const koord3d start, test_driver_t *tdri
 
 					if (industry_destination_pos != koord::invalid)
 					{
-						w->add_private_car_route(industry_destination_pos, previous);
+						str->add_private_car_route(industry_destination_pos, previous);
 					}
 
 					if (attraction_destination_pos != koord::invalid)
 					{
-						w->add_private_car_route(attraction_destination_pos, previous);
+						str->add_private_car_route(attraction_destination_pos, previous);
 					}
 
 					if (city_destination_pos != koord::invalid)
 					{
-						w->add_private_car_route(city_destination_pos, previous);
+						str->add_private_car_route(city_destination_pos, previous);
 					}
 				}
 

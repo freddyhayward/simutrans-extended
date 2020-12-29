@@ -66,11 +66,6 @@ namespace std
 	};
 }
 #endif
-enum travel_times {
-	WAY_TRAVEL_TIME_IDEAL,	///< number of ticks vehicles would spend traversing this way without traffic
-	WAY_TRAVEL_TIME_ACTUAL,///< number of ticks vehicles actually spent passing over this way
-	MAX_WAY_TRAVEL_TIMES
-};
 
 
 /**
@@ -114,9 +109,6 @@ public:
 		}
 	};
 
-	static void add_travel_time_update(weg_t* w, uint32 actual, uint32 ideal);
-	static void apply_travel_time_updates();
-	static void clear_travel_time_updates();
 
 private:
 	/**
@@ -125,8 +117,6 @@ private:
 	* MAX_WAY_STATISTICS: see #define at top of file
 	*/
 	sint16 statistics[MAX_WAY_STAT_MONTHS][MAX_WAY_STATISTICS];
-
-	uint32 travel_times[MAX_WAY_STAT_MONTHS][MAX_WAY_TRAVEL_TIMES];
 
 
 	/**
@@ -167,11 +157,6 @@ private:
 	image_id foreground_image;
 
 	/**
-	* Initializes all member variables
-	*/
-	void init();
-
-	/**
 	* initializes statistic array
 	*/
 	void init_statistics();
@@ -208,9 +193,6 @@ private:
 	// Whether the way is in a degraded state.
 	bool degraded:1;
 
-#ifdef MULTI_THREAD
-	pthread_mutex_t private_car_store_route_mutex;
-#endif
 
 protected:
 
@@ -234,6 +216,11 @@ protected:
 	 */
 	const way_desc_t *replacement_way;
 
+/**
+* Initializes all member variables
+*/
+virtual void init();
+
 public:
 
 	/*
@@ -244,28 +231,6 @@ public:
 	inline weg_t(waytype_t waytype, loadsave_t*) : obj_no_info_t(obj_t::way), wtyp(waytype) { init(); }
 	inline weg_t(waytype_t waytype) : obj_no_info_t(obj_t::way), wtyp(waytype) { init(); }
 
-	// This was in strasse_t, but being there possibly caused heap corruption.
-	minivec_tpl<gebaeude_t*> connected_buildings;
-
-	// Likewise, out of caution, put this here for the same reason.
-	typedef koordhashtable_tpl<koord, koord3d> private_car_route_map;
-	//typedef std::unordered_map<koord, koord3d> private_car_route_map_2;
-	private_car_route_map private_car_routes[2];
-	//private_car_route_map_2 private_car_routes_std[2];
-	static uint32 private_car_routes_currently_reading_element;
-	static uint32 get_private_car_routes_currently_writing_element() { return private_car_routes_currently_reading_element == 1 ? 0 : 1; }
-
-	void add_private_car_route(koord dest, koord3d next_tile);
-private:
-	/// Set the boolean value to true to modify the set currently used for reading (this must ONLY be done when this is called from a single threaded part of the code).
-	void remove_private_car_route(koord dest, bool reading_set = false);
-public:
-	static void swap_private_car_routes_currently_reading_element() { private_car_routes_currently_reading_element = private_car_routes_currently_reading_element == 0 ? 1 : 0; }
-
-	/// Delete all private car routes originating from or passing through this tile.
-	/// Set the boolean value to true to modify the set currently used for reading (this must ONLY be done when this is called from a single threaded part of the code).
-	void delete_all_routes_from_here(bool reading_set = false);
-	void delete_route_to(koord destination, bool reading_set = false);
 
 
 
@@ -412,7 +377,7 @@ public:
 	/**
 	* new month
 	*/
-	void new_month();
+	virtual void new_month();
 
 	void check_diagonal();
 
@@ -485,26 +450,6 @@ public:
 
 	runway_directions get_runway_directions() const;
 	uint32 get_runway_length(bool is_36_18) const;
-
-	//void increment_traffic_stopped_counter() { statistics[0][WAY_STAT_WAITING] ++; }
-	inline void update_travel_times(uint32 actual, uint32 ideal)
-	{
-		travel_times[WAY_STAT_THIS_MONTH][WAY_TRAVEL_TIME_ACTUAL] += actual;
-		travel_times[WAY_STAT_THIS_MONTH][WAY_TRAVEL_TIME_IDEAL] += ideal;
-	}
-
-	//will return the % ratio of actual to ideal traversal times
-	inline uint32 get_congestion_percentage() const {
-		uint32 combined_ideal = travel_times[WAY_STAT_THIS_MONTH][WAY_TRAVEL_TIME_IDEAL] + travel_times[WAY_STAT_LAST_MONTH][WAY_TRAVEL_TIME_IDEAL];
-		if(combined_ideal == 0u) {
-			return 0u;
-		}
-		uint32 combined_actual = travel_times[WAY_STAT_THIS_MONTH][WAY_TRAVEL_TIME_ACTUAL] + travel_times[WAY_STAT_LAST_MONTH][WAY_TRAVEL_TIME_ACTUAL];
-		if(combined_actual <= combined_ideal) {
-			return 0u;
-		}
-		return (combined_actual * 100u / combined_ideal) - 100u;
-	}
 };
 
 

@@ -946,8 +946,8 @@ grund_t* private_car_t::hop_check()
 	}
 
 	// find the allowed directions
-	const weg_t *weg = from->get_weg(road_wt);
-	if(weg==NULL) {
+	const strasse_t *str = (strasse_t*)from->get_weg(road_wt);
+	if(str == NULL) {
 		// nothing to go? => destroy ...
 		time_to_life = 0;
 		return NULL;
@@ -956,7 +956,7 @@ grund_t* private_car_t::hop_check()
 	// traffic light phase check (since this is on next tile, it will always be necessary!)
 	const ribi_t::ribi direction90 = ribi_type(get_pos(),pos_next);
 
-	if(  weg->has_sign()  ) {
+	if(  str->has_sign()  ) {
 		const roadsign_t* rs = from->find<roadsign_t>();
 		const roadsign_desc_t* rs_desc = rs->get_desc();
 		if(  rs_desc->is_traffic_light()  &&  (rs->get_dir()&direction90)==0  ) {
@@ -1001,7 +1001,7 @@ grund_t* private_car_t::hop_check()
 		// We need to check here, as the hashtable will give us a 0,0,0 koord rather
 		// than koord::invalid if this be not contained in the hashtable.
 		bool found_route = false;
-		found_route = weg->private_car_routes[weg_t::private_car_routes_currently_reading_element].is_contained(check_target);
+		found_route = str->private_car_routes[strasse_t::private_car_routes_currently_reading_element].is_contained(check_target);
 		if (!found_route)
 		{
 			if (!current_city || current_city != destination_city)
@@ -1010,13 +1010,13 @@ grund_t* private_car_t::hop_check()
 				// (1) we are not in our destination city; or
 				// (2) there is a route to the individual destination building in the city.
 				check_target = destination_city ? destination_city->get_townhall_road() : koord::invalid;
-				found_route = weg->private_car_routes[weg_t::private_car_routes_currently_reading_element].is_contained(check_target);
+				found_route = str->private_car_routes[strasse_t::private_car_routes_currently_reading_element].is_contained(check_target);
 			}
 		}
 
 		if (found_route)
 		{
-			pos_next_next = weg->private_car_routes[weg_t::private_car_routes_currently_reading_element].get(check_target);
+			pos_next_next = str->private_car_routes[strasse_t::private_car_routes_currently_reading_element].get(check_target);
 
 			// Check whether we are at the end of the route (i.e. the destination)
 			if ((current_city == destination_city) && pos_next_next == koord3d::invalid)
@@ -1027,8 +1027,8 @@ grund_t* private_car_t::hop_check()
 
 			// Check whether the way has been deleted in the meantime.
 			const grund_t* next_gr = welt->lookup(pos_next_next);
-			const weg_t* next_way = next_gr ? next_gr->get_weg(road_wt) : NULL;
-			if (!next_way)
+			const strasse_t* next_str = next_gr ? (strasse_t*)next_gr->get_weg(road_wt) : NULL;
+			if (!next_str)
 			{
 				pos_next_next = koord3d::invalid;
 
@@ -1044,19 +1044,18 @@ grund_t* private_car_t::hop_check()
 			{
 				const ribi_t::ribi current_dir = ribi_type(get_pos(), pos_next);
 				const ribi_t::ribi dir_next = ribi_type(pos_next, pos_next_next);
-				const strasse_t* str = static_cast<const strasse_t *>(next_way);
 
 				const bool backwards = dir_next == ribi_t::backward(current_dir);
 
-				bool direction_allowed = str->get_ribi() & dir_next;
+				bool direction_allowed = next_str->get_ribi() & dir_next;
 				if (!direction_allowed)
 				{
 					// Check whether the private car is allowed on the subsequent way's direction
-					const koord3d pos_next_next_next = next_way->private_car_routes[weg_t::private_car_routes_currently_reading_element].get(check_target);
+					const koord3d pos_next_next_next = next_str->private_car_routes[strasse_t::private_car_routes_currently_reading_element].get(check_target);
 					if (pos_next_next_next != koord3d::invalid)
 					{
 						const ribi_t::ribi dir_next_next = ribi_type(pos_next_next, pos_next_next_next);
-						direction_allowed = str->get_ribi() & dir_next_next;
+						direction_allowed = next_str->get_ribi() & dir_next_next;
 					}
 					else
 					{
@@ -1079,7 +1078,7 @@ grund_t* private_car_t::hop_check()
 				else
 				{
 					// Check whether the tile is passable: do not drive onto an impassible tile.
-					if (!(next_way && next_way->get_max_speed() > 0 && next_way->get_max_axle_load() > 0 && (next_way->get_owner() == NULL || next_way->get_owner()->allows_access_to(welt->get_public_player()->get_player_nr()))))
+					if (!(next_str && next_str->get_max_speed() > 0 && next_str->get_max_axle_load() > 0 && (next_str->get_owner() == NULL || next_str->get_owner()->allows_access_to(welt->get_public_player()->get_player_nr()))))
 					{
 						// Next tile not passable even though this is on a route: mothballed, or made private. Revert to heuristic mode.
 						pos_next_next = koord3d::invalid;
@@ -1100,7 +1099,7 @@ grund_t* private_car_t::hop_check()
 
 		// ok, nobody did delete the road in front of us
 		// so we can check for valid directions
-		ribi_t::ribi ribi = weg->get_ribi() & (~ribi_t::backward(direction90));
+		ribi_t::ribi ribi = str->get_ribi() & (~ribi_t::backward(direction90));
 
 		// cul de sac: return
 		if(ribi==0) {
@@ -1165,7 +1164,7 @@ grund_t* private_car_t::hop_check()
 							{
 								// We have checked whether this is on a route above, so if we reach here, we assume that this
 								// city exit tile is not on a route.
-								weg = from->get_weg(road_wt);
+								str = (strasse_t*)from->get_weg(road_wt);
 								grund_t* gr_backwards;
 								if (city_exit)
 								{

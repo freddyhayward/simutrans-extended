@@ -82,7 +82,7 @@ void traffic_vehicle_t::flush_travel_times(strasse_t* str)
 {
 	if(get_max_speed() && str->get_max_speed() && dist_travelled_since_last_hop > (128 << YARDS_PER_VEHICLE_STEP_SHIFT))
 	{
-		weg_t::add_travel_time_update(str, world()->get_ticks() - time_at_last_hop, dist_travelled_since_last_hop / min(get_max_speed(), kmh_to_speed(str->get_max_speed())));
+		str->add_travel_time_update(world()->get_ticks() - time_at_last_hop, dist_travelled_since_last_hop / min(get_max_speed(), kmh_to_speed(str->get_max_speed())));
 	}
 	reset_measurements();
 }
@@ -3547,13 +3547,13 @@ bool road_vehicle_t::check_next_tile(const grund_t *bd) const
 int road_vehicle_t::get_cost(const grund_t *gr, const sint32 max_speed, koord from_pos)
 {
 	// first favor faster ways
-	const weg_t *w=gr->get_weg(road_wt);
-	if(!w) {
+	const strasse_t *str=(strasse_t*)gr->get_weg(road_wt);
+	if(!str) {
 		return 0xFFFF;
 	}
 
 	// max_speed?
-	sint32 max_tile_speed = w->get_max_speed();
+	sint32 max_tile_speed = str->get_max_speed();
 
 	// add cost for going (with maximum speed, cost is 1)
 	sint32 costs = (max_speed <= max_tile_speed) ? 10 : 40 - (30 * max_tile_speed) / max_speed;
@@ -3564,7 +3564,7 @@ int road_vehicle_t::get_cost(const grund_t *gr, const sint32 max_speed, koord fr
 	}
 
 	// Take traffic congestion into account in determining the cost. Use the same formula as for private cars.
-	const uint32 congestion_percentage = w->get_congestion_percentage();
+	const uint32 congestion_percentage = str->get_congestion_percentage();
 	if (congestion_percentage)
 	{
 		costs += (costs * congestion_percentage) / 200;
@@ -3580,7 +3580,7 @@ int road_vehicle_t::get_cost(const grund_t *gr, const sint32 max_speed, koord fr
 
 	// It is now difficult to calculate here whether the vehicle is overweight, so do this in the route finder instead.
 
-	if(w->is_diagonal())
+	if(str->is_diagonal())
 	{
 		// Diagonals are a *shorter* distance.
 		costs = (costs * 5) / 7; // was: costs /= 1.4

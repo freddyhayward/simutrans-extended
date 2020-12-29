@@ -354,11 +354,11 @@ void gebaeude_t::check_road_tiles(bool del)
 				for (uint32 j = 0; j<plan->get_boden_count(); j++)
 				{
 					grund_t *bd = plan->get_boden_bei(j);
-					weg_t *way = bd->get_weg(road_wt);
+					strasse_t *str = (strasse_t*)bd->get_weg(road_wt);
 
-					if (way)
+					if (str)
 					{
-						way->connected_buildings.remove(this);
+						str->connected_buildings.remove(this);
 					}
 				}
 			}
@@ -374,10 +374,10 @@ void gebaeude_t::check_road_tiles(bool del)
 				{
 					continue;
 				}
-				weg_t* const way = gr_this->get_weg(road_wt);
-				if (way)
+				strasse_t* const str = (strasse_t*)gr_this->get_weg(road_wt);
+				if (str)
 				{
-					way->connected_buildings.append_unique(this);
+					str->connected_buildings.append_unique(this);
 				}
 			}
 		}

@@ -25,6 +25,7 @@
 #include "../dataobj/loadsave.h"
 
 #include "../boden/wege/schiene.h"
+#include "../boden/wege/strasse.h"
 #include "../obj/leitung2.h"
 #include "../obj/gebaeude.h"
 #include "../utils/cbuffer_t.h"
@@ -959,7 +960,7 @@ void minimap_t::calc_map_pixel(const koord k)
 			if (gr->hat_wege())
 			{
 				// This is only applicable to roads.
-				const weg_t* road = gr->get_weg(road_wt);
+				const strasse_t* road = (strasse_t*)gr->get_weg(road_wt);
 				if (road)
 				{
 					// Because it is possible for congestion to be >100% (as 100% merely means that traffic

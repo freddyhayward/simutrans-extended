@@ -680,7 +680,7 @@ void karte_t::destroy()
 	world_attractions.clear();
 	DBG_MESSAGE("karte_t::destroy()", "attraction list destroyed");
 
-	weg_t::clear_travel_time_updates();
+	strasse_t::clear_travel_time_updates();
 	weg_t::clear_list_of__ways();
 	DBG_MESSAGE("karte_t::destroy()", "way list destroyed");
 
@@ -5660,7 +5660,7 @@ void karte_t::step()
 
 		if (cities_awaiting_private_car_route_check.empty())
 		{
-			weg_t::swap_private_car_routes_currently_reading_element();
+			strasse_t::swap_private_car_routes_currently_reading_element();
 			FOR(weighted_vector_tpl<stadt_t*>, const i, stadt)
 			{
 				cities_awaiting_private_car_route_check.append(i);
@@ -5786,7 +5786,7 @@ void karte_t::step()
 	}
 #endif
 
-	weg_t::apply_travel_time_updates();
+	strasse_t::apply_travel_time_updates();
 
 	rands[16] = get_random_seed();
 
@@ -8834,7 +8834,7 @@ DBG_MESSAGE("karte_t::save(loadsave_t *file)", "motd filename %s", env_t::server
 
 	if (file->get_extended_version() >= 15 || (file->get_extended_version() == 14 && file->get_extended_revision() >= 20))
 	{
-		file->rdwr_long(weg_t::private_car_routes_currently_reading_element);
+		file->rdwr_long(strasse_t::private_car_routes_currently_reading_element);
 	}
 
 	if (file->get_extended_version() >= 15 || ((file->get_extended_version() >= 14 && file->get_extended_revision() >= 8) && get_settings().get_save_path_explorer_data()))
@@ -10087,7 +10087,7 @@ DBG_MESSAGE("karte_t::load()", "%d factories loaded", fab_list.get_count());
 
 	if (file->get_extended_version() >= 15 || (file->get_extended_version() == 14 && file->get_extended_revision() >= 20))
 	{
-		file->rdwr_long(weg_t::private_car_routes_currently_reading_element);
+		file->rdwr_long(strasse_t::private_car_routes_currently_reading_element);
 	}
 
 	// Either reload the path explorer data or refresh the routing.

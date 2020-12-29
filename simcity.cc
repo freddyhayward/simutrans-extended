@@ -69,7 +69,7 @@
 
 #include "tpl/minivec_tpl.h"
 
-uint32 weg_t::private_car_routes_currently_reading_element;
+uint32 strasse_t::private_car_routes_currently_reading_element;
 
 // since we use 32 bit per growth steps, we use this variable to take care of the remaining sub citizen growth
 #define CITYGROWTH_PER_CITIZEN (0x0000000100000000ll)
@@ -2739,7 +2739,7 @@ void stadt_t::check_all_private_car_routes()
 #endif
 
 
-	weg_t* const w = gr ? gr->get_weg(road_wt) : NULL;
+	strasse_t* const w = gr ? (strasse_t*)gr->get_weg(road_wt) : NULL;
 	if (w)
 	{
 		w->delete_all_routes_from_here();
@@ -5986,7 +5986,7 @@ bool private_car_destination_finder_t::is_target(const grund_t* gr, const grund_
 		return true;
 	}
 
-	const weg_t* way = gr->get_weg(road_wt);
+	const strasse_t* way = (strasse_t*)gr->get_weg(road_wt);
 	if(way->connected_buildings.get_count() > 0)
 	{
 		return true;
@@ -5997,16 +5997,16 @@ bool private_car_destination_finder_t::is_target(const grund_t* gr, const grund_
 
 int private_car_destination_finder_t::get_cost(const grund_t* gr, sint32 max_speed, koord)
 {
-	const weg_t *w = gr->get_weg(road_wt);
-	if(!w)
+	const strasse_t *str = (strasse_t*)gr->get_weg(road_wt);
+	if(!str)
 	{
 		return 0xFFFF;
 	}
 
-	const sint32 max_tile_speed = w->get_max_speed(); // This returns speed in km/h.
+	const sint32 max_tile_speed = str->get_max_speed(); // This returns speed in km/h.
 	const planquadrat_t* plan = welt->access_nocheck(gr->get_pos().get_2d());
 	const stadt_t* city = plan->get_city();
-	const bool is_diagonal = w->is_diagonal();
+	const bool is_diagonal = str->is_diagonal();
 
 	if(city == last_city && max_tile_speed == last_tile_speed)
 	{
@@ -6027,7 +6027,7 @@ int private_car_destination_finder_t::get_cost(const grund_t* gr, sint32 max_spe
 	sint32 speed = min(max_speed, max_tile_speed);
 
 #ifndef FORBID_CONGESTION_EFFECTS
-	const uint32 congestion_percentage = w->get_congestion_percentage();
+	const uint32 congestion_percentage = str->get_congestion_percentage();
 	if (congestion_percentage)
 	{
 		speed -= (speed * congestion_percentage) / 200;
@@ -6185,11 +6185,11 @@ void stadt_t::calc_congestion()
 				const grund_t* const gr = welt->lookup_kartenboden(k);
 				if (gr)
 				{
-					const weg_t* w = gr->get_weg(road_wt);
-					if (w)
+					const strasse_t* str = (strasse_t*)gr->get_weg(road_wt);
+					if (str)
 					{
 						road_tiles++;
-						total_congestion += w->get_congestion_percentage();
+						total_congestion += str->get_congestion_percentage();
 					}
 				}
 			}

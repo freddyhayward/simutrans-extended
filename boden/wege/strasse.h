@@ -21,6 +21,17 @@ class strasse_t : public weg_t
 public:
 	static bool show_masked_ribi;
 
+	enum travel_times {
+		WAY_TRAVEL_TIME_IDEAL,	///< number of ticks vehicles would spend traversing this way without traffic
+		WAY_TRAVEL_TIME_ACTUAL,///< number of ticks vehicles actually spent passing over this way
+		MAX_WAY_TRAVEL_TIMES
+	};
+	uint32 travel_times[MAX_WAY_STAT_MONTHS][MAX_WAY_TRAVEL_TIMES];
+
+	static void clear_travel_time_updates();
+
+	static void apply_travel_time_updates();
+
 private:
 	/**
 	* @author THLeaderH
@@ -33,21 +44,31 @@ private:
 	*/
 	uint8 ribi_mask_oneway:4;
 
+
+#ifdef MULTI_THREAD
+	pthread_mutex_t private_car_store_route_mutex;
+#endif
+
 public:
 	static const way_desc_t *default_strasse;
 
+	void add_travel_time_update(uint32 actual, uint32 ideal);
 	// Being here rather than in weg_t might have caused heap corruption.
 	//minivec_tpl<gebaeude_t*> connected_buildings;
 
 	strasse_t(loadsave_t *file);
 	strasse_t();
+	virtual ~strasse_t();
+	void init() OVERRIDE;
 
 	//inline waytype_t get_waytype() const {return road_wt;}
 
 	void set_gehweg(bool janein);
 
 	void rdwr(loadsave_t *file) OVERRIDE;
+	void new_month() OVERRIDE;
 
+	void info(cbuffer_t & buf) const OVERRIDE;
 	/**
 	* Overtaking mode (declared in simtypes.h)
 	* halt_mode = vehicles can stop on passing lane
@@ -111,6 +132,50 @@ public:
 				return COL_WHITE-1;
 		}
 		return 0;
+	}
+
+	// This was in strasse_t, but being there possibly caused heap corruption.
+	minivec_tpl<gebaeude_t*> connected_buildings;
+
+	// Likewise, out of caution, put this here for the same reason.
+	typedef koordhashtable_tpl<koord, koord3d> private_car_route_map;
+	//typedef std::unordered_map<koord, koord3d> private_car_route_map_2;
+	private_car_route_map private_car_routes[2];
+	//private_car_route_map_2 private_car_routes_std[2];
+	static uint32 private_car_routes_currently_reading_element;
+	static uint32 get_private_car_routes_currently_writing_element() { return private_car_routes_currently_reading_element == 1 ? 0 : 1; }
+
+	void add_private_car_route(koord dest, koord3d next_tile);
+private:
+	/// Set the boolean value to true to modify the set currently used for reading (this must ONLY be done when this is called from a single threaded part of the code).
+	void remove_private_car_route(koord dest, bool reading_set = false);
+public:
+	static void swap_private_car_routes_currently_reading_element() { private_car_routes_currently_reading_element = private_car_routes_currently_reading_element == 0 ? 1 : 0; }
+
+	/// Delete all private car routes originating from or passing through this tile.
+	/// Set the boolean value to true to modify the set currently used for reading (this must ONLY be done when this is called from a single threaded part of the code).
+	void delete_all_routes_from_here(bool reading_set = false);
+	void delete_route_to(koord destination, bool reading_set = false);
+
+	void init_travel_times();
+	//void increment_traffic_stopped_counter() { statistics[0][WAY_STAT_WAITING] ++; }
+	inline void update_travel_times(uint32 actual, uint32 ideal)
+	{
+		travel_times[WAY_STAT_THIS_MONTH][WAY_TRAVEL_TIME_ACTUAL] += actual;
+		travel_times[WAY_STAT_THIS_MONTH][WAY_TRAVEL_TIME_IDEAL] += ideal;
+	}
+
+	//will return the % ratio of actual to ideal traversal times
+	inline uint32 get_congestion_percentage() const {
+		uint32 combined_ideal = travel_times[WAY_STAT_THIS_MONTH][WAY_TRAVEL_TIME_IDEAL] + travel_times[WAY_STAT_LAST_MONTH][WAY_TRAVEL_TIME_IDEAL];
+		if(combined_ideal == 0u) {
+			return 0u;
+		}
+		uint32 combined_actual = travel_times[WAY_STAT_THIS_MONTH][WAY_TRAVEL_TIME_ACTUAL] + travel_times[WAY_STAT_LAST_MONTH][WAY_TRAVEL_TIME_ACTUAL];
+		if(combined_actual <= combined_ideal) {
+			return 0u;
+		}
+		return (combined_actual * 100u / combined_ideal) - 100u;
 	}
 };
 
