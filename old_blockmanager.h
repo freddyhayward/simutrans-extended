@@ -22,8 +22,8 @@ private:
 	static void rdwr_block(karte_t *welt,loadsave_t *file);
 
 public:
-	static void rdwr(karte_t *welt, loadsave_t *file);
-	static void finish_rd(karte_t *welt);
+	static void rdwr(karte_t *welt, loadsave_t *file);	
+	static void finish_rd(karte_t *welt); 
 };
 
 #endif
