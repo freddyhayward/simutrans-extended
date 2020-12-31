@@ -999,8 +999,9 @@ grund_t* private_car_t::hop_check()
 
 		// We need to check here, as the hashtable will give us a 0,0,0 koord rather
 		// than koord::invalid if this be not contained in the hashtable.
+		// not true anymore
 		bool found_route = false;
-		found_route = str->private_car_routes[strasse_t::private_car_routes_currently_reading_element].is_contained(check_target);
+		found_route = str->get_private_car_route_tile_to(check_target) != koord3d::invalid;
 		if (!found_route)
 		{
 			if (!current_city || current_city != destination_city)
@@ -1009,13 +1010,13 @@ grund_t* private_car_t::hop_check()
 				// (1) we are not in our destination city; or
 				// (2) there is a route to the individual destination building in the city.
 				check_target = destination_city ? destination_city->get_townhall_road() : koord::invalid;
-				found_route = str->private_car_routes[strasse_t::private_car_routes_currently_reading_element].is_contained(check_target);
+				found_route = check_target != koord::invalid && str->get_private_car_route_tile_to(check_target) != koord3d::invalid;
 			}
 		}
 
 		if (found_route)
 		{
-			pos_next_next = str->private_car_routes[strasse_t::private_car_routes_currently_reading_element].get(check_target);
+			pos_next_next = str->get_private_car_route_tile_to(check_target);
 
 			// Check whether we are at the end of the route (i.e. the destination)
 			if ((current_city == destination_city) && pos_next_next == koord3d::invalid)
@@ -1050,7 +1051,7 @@ grund_t* private_car_t::hop_check()
 				if (!direction_allowed)
 				{
 					// Check whether the private car is allowed on the subsequent way's direction
-					const koord3d pos_next_next_next = next_str->private_car_routes[strasse_t::private_car_routes_currently_reading_element].get(check_target);
+					const koord3d pos_next_next_next = next_str->get_private_car_route_tile_to(check_target);
 					if (pos_next_next_next != koord3d::invalid)
 					{
 						const ribi_t::ribi dir_next_next = ribi_type(pos_next_next, pos_next_next_next);

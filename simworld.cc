@@ -680,7 +680,7 @@ void karte_t::destroy()
 	world_attractions.clear();
 	DBG_MESSAGE("karte_t::destroy()", "attraction list destroyed");
 
-	strasse_t::clear_travel_time_updates();
+	strasse_t::clear_updates();
 	weg_t::clear_list_of__ways();
 	DBG_MESSAGE("karte_t::destroy()", "way list destroyed");
 
@@ -5660,7 +5660,6 @@ void karte_t::step()
 
 		if (cities_awaiting_private_car_route_check.empty())
 		{
-			strasse_t::swap_private_car_routes_currently_reading_element();
 			FOR(weighted_vector_tpl<stadt_t*>, const i, stadt)
 			{
 				cities_awaiting_private_car_route_check.append(i);
@@ -5672,7 +5671,7 @@ void karte_t::step()
 		// There can be many mutex clashes with this; however, processing only one city at a time can make it take an unfeasible amount of time to refresh all routes.
 		//cities_to_process = stadt.get_count() > 64 ? 1 : min(cities_awaiting_private_car_route_check.get_count(), parallel_operations - 1);
 		//cities_to_process = 1;
-		cities_to_process = env_t::networkmode ? 1 : min(cities_awaiting_private_car_route_check.get_count(), parallel_operations - 1);
+		cities_to_process = 1;
 		start_private_car_threads();
 #else
 		const sint32 cities_to_process = env_t::networkmode ? 1 : min(cities_awaiting_private_car_route_check.get_count(), parallel_operations - 1);
@@ -5786,7 +5785,7 @@ void karte_t::step()
 	}
 #endif
 
-	strasse_t::apply_travel_time_updates();
+	strasse_t::apply_updates();
 
 	rands[16] = get_random_seed();
 
@@ -8832,11 +8831,6 @@ DBG_MESSAGE("karte_t::save(loadsave_t *file)", "motd filename %s", env_t::server
 		}
 	}
 
-	if (file->get_extended_version() >= 15 || (file->get_extended_version() == 14 && file->get_extended_revision() >= 20))
-	{
-		file->rdwr_long(strasse_t::private_car_routes_currently_reading_element);
-	}
-
 	if (file->get_extended_version() >= 15 || ((file->get_extended_version() >= 14 && file->get_extended_revision() >= 8) && get_settings().get_save_path_explorer_data()))
 	{
 		path_explorer_t::rdwr(file);
@@ -9743,6 +9737,7 @@ DBG_MESSAGE("karte_t::load()", "messages loaded");
 	recalc_season_snowline(false);
 
 DBG_MESSAGE("karte_t::load()", "%d ways loaded",weg_t::get_alle_wege().get_count());
+	strasse_t::clear_updates();
 
 	ls.set_progress( (get_size().y*3)/2+256 );
 
@@ -10087,7 +10082,8 @@ DBG_MESSAGE("karte_t::load()", "%d factories loaded", fab_list.get_count());
 
 	if (file->get_extended_version() >= 15 || (file->get_extended_version() == 14 && file->get_extended_revision() >= 20))
 	{
-		file->rdwr_long(strasse_t::private_car_routes_currently_reading_element);
+		uint32 dummy;
+		file->rdwr_long(dummy);
 	}
 
 	// Either reload the path explorer data or refresh the routing.

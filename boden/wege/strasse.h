@@ -7,12 +7,25 @@
 #define BODEN_WEGE_STRASSE_H
 
 
+#include <unordered_map>
 #include "weg.h"
 //#include "../../tpl/minivec_tpl.h"
 
 class fabrik_t;
 //class gebaeude_t;
 
+namespace std
+{
+	template <>
+	struct hash<koord>
+	{
+		std::size_t operator()(const koord& key) const
+		{
+			using std::hash;
+			return (uint32)key.y << 16 | key.x;
+		}
+	};
+}
 /**
  * Cars are able to drive on roads.
  */
@@ -28,9 +41,7 @@ public:
 	};
 	uint32 travel_times[MAX_WAY_STAT_MONTHS][MAX_WAY_TRAVEL_TIMES];
 
-	static void clear_travel_time_updates();
 
-	static void apply_travel_time_updates();
 
 private:
 	/**
@@ -44,10 +55,6 @@ private:
 	*/
 	uint8 ribi_mask_oneway:4;
 
-
-#ifdef MULTI_THREAD
-	pthread_mutex_t private_car_store_route_mutex;
-#endif
 
 public:
 	static const way_desc_t *default_strasse;
@@ -138,24 +145,37 @@ public:
 	minivec_tpl<gebaeude_t*> connected_buildings;
 
 	// Likewise, out of caution, put this here for the same reason.
-	typedef koordhashtable_tpl<koord, koord3d> private_car_route_map;
+	//typedef koordhashtable_tpl<koord, koord3d> old_private_car_route_map;
 	//typedef std::unordered_map<koord, koord3d> private_car_route_map_2;
-	private_car_route_map private_car_routes[2];
+	//old_private_car_route_map old_private_car_routes[2];
+
+	typedef std::unordered_map<koord, koord3d> private_car_route_map;
+	private_car_route_map private_car_routes;
+
 	//private_car_route_map_2 private_car_routes_std[2];
-	static uint32 private_car_routes_currently_reading_element;
-	static uint32 get_private_car_routes_currently_writing_element() { return private_car_routes_currently_reading_element == 1 ? 0 : 1; }
 
 	void add_private_car_route(koord dest, koord3d next_tile);
+	void remove_private_car_route(koord dest);
+
+	static void clear_updates();
+	static void apply_updates();
+
 private:
 	/// Set the boolean value to true to modify the set currently used for reading (this must ONLY be done when this is called from a single threaded part of the code).
-	void remove_private_car_route(koord dest, bool reading_set = false);
+	static void apply_travel_time_updates();
+	static void apply_private_car_route_updates();
+	static void clear_travel_time_updates();
+	static void clear_private_car_route_updates();
+	static slist_tpl<std::tuple<strasse_t *, uint32, uint32>> pending_travel_time_updates;
+	static slist_tpl<std::tuple<strasse_t *, koord, koord3d>> pending_private_car_route_updates;
 public:
-	static void swap_private_car_routes_currently_reading_element() { private_car_routes_currently_reading_element = private_car_routes_currently_reading_element == 0 ? 1 : 0; }
 
 	/// Delete all private car routes originating from or passing through this tile.
 	/// Set the boolean value to true to modify the set currently used for reading (this must ONLY be done when this is called from a single threaded part of the code).
-	void delete_all_routes_from_here(bool reading_set = false);
-	void delete_route_to(koord destination, bool reading_set = false);
+	void delete_all_routes_from_here();
+	void delete_route_to(koord destination);
+
+	koord3d get_private_car_route_tile_to(koord dest) const;
 
 	void init_travel_times();
 	//void increment_traffic_stopped_counter() { statistics[0][WAY_STAT_WAITING] ++; }

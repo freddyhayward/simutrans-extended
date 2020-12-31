@@ -49,7 +49,6 @@
 #ifdef MULTI_THREAD
 #include "../../utils/simthread.h"
 static pthread_mutex_t weg_calc_image_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-static pthread_mutexattr_t mutex_attributes;
 #endif
 
 
@@ -341,9 +340,6 @@ void weg_t::init()
 	degraded = false;
 	remaining_wear_capacity = 100000000;
 	replacement_way = NULL;
-#ifdef MULTI_THREAD
-	pthread_mutexattr_init(&mutex_attributes);
-#endif
 }
 
 
@@ -479,15 +475,13 @@ void weg_t::rdwr(loadsave_t *file)
 		degraded = deg;
 #endif
 
+		// NOTE: This will ONLY read the first element
 		if (file->get_extended_version() == 14 && file->get_extended_revision() >= 19 && file->get_extended_revision() < 33)
 		{
 			const uint32 route_array_number = file->get_extended_version() >= 15 || file->get_extended_revision() >= 20 ? 2 : 1;
-
+			strasse_t* str = get_waytype()==road_wt ? (strasse_t*)this : NULL;
 			if (file->is_loading())
 			{
-				strasse_t::private_car_route_map dummy[route_array_number];
-
-				strasse_t::private_car_route_map* private_car_routes = get_waytype()==road_wt ? ((strasse_t*)this)->private_car_routes : dummy;
 				for (uint32 i = 0; i < route_array_number; i++)
 				{
 					uint32 private_car_routes_count = 0;
@@ -498,14 +492,12 @@ void weg_t::rdwr(loadsave_t *file)
 						destination.rdwr(file);
 						koord3d next_tile;
 						next_tile.rdwr(file);
-						bool put_succeeded = private_car_routes[i].put(destination, next_tile);
-						assert(put_succeeded);
-						(void)put_succeeded;
+						if(i == 0 && str) {
+							if(str->get_private_car_route_tile_to(destination) == koord3d::invalid) {
+								str->private_car_routes[destination] = next_tile;
+							}
+						}
 					}
-				}
-				if (route_array_number == 1)
-				{
-					private_car_routes[1].clear();
 				}
 			}
 		}

@@ -69,8 +69,6 @@
 
 #include "tpl/minivec_tpl.h"
 
-uint32 strasse_t::private_car_routes_currently_reading_element;
-
 // since we use 32 bit per growth steps, we use this variable to take care of the remaining sub citizen growth
 #define CITYGROWTH_PER_CITIZEN (0x0000000100000000ll)
 
@@ -2636,16 +2634,16 @@ void stadt_t::step(uint32 delta_t)
 		step_grow_city();
 		next_growth_step -= stadt_t::city_growth_step;
 
-#if 0 // DEPRECATED
+/* DEPRECATED
 		// Was originally for testing, but this seems to be a sensible frequency for this
 		// Performance profiling on a large game finds this acceptable.
-		if (private_car_routes[get_currently_inactive_route_map()].empty())
+		if (old_private_car_routes[get_currently_inactive_route_map()].empty())
 		{
 			// Do not try to re-check the routes here if the last attempt at doing so
 			// has not been processed yet.
 			welt->add_queued_city(this);
 		}
-#endif
+*/
 	}
 
 	// update history (might be changed due to construction/destroying of houses)
@@ -2738,11 +2736,10 @@ void stadt_t::check_all_private_car_routes()
 	(void)error;
 #endif
 
-
-	strasse_t* const w = gr ? (strasse_t*)gr->get_weg(road_wt) : NULL;
-	if (w)
+	strasse_t* const str = gr ? (strasse_t*)gr->get_weg(road_wt) : NULL;
+	if (str)
 	{
-		w->delete_all_routes_from_here();
+		str->delete_all_routes_from_here();
 	}
 
 	// This will find the fastest route from the townhall road to *all* other townhall roads, industries and attractions.
