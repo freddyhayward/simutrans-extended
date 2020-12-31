@@ -160,6 +160,8 @@ public:
 	// just to calculate the offset for skipping the ways ...
 	static uint8 offsets[4];
 
+	static inline koord3d get_pos(const grund_t* gr) { return gr ? gr->get_pos() : koord3d::invalid; }
+
 public:
 	/** true, when showing a grid
 	 */

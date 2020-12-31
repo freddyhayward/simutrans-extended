@@ -133,8 +133,7 @@ bool ai_t::is_connected( const koord start_pos, const koord dest_pos, const good
 // calls a general tool just like a player work do
 bool ai_t::call_general_tool( int tool, koord k, const char *param )
 {
-	grund_t *gr = welt->lookup_kartenboden(k);
-	koord3d pos = gr ? gr->get_pos() : koord3d::invalid;
+	koord3d pos = grund_t::get_pos(welt->lookup_kartenboden(k));
 	const char *old_param = tool_t::general_tool[tool]->get_default_param();
 	tool_t::general_tool[tool]->set_default_param(param);
 	const char * err = tool_t::general_tool[tool]->work( this, pos );

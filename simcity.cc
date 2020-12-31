@@ -2722,7 +2722,7 @@ void stadt_t::check_all_private_car_routes()
 	}
 	const uint32 depth = welt->get_max_road_check_depth();
 	const grund_t* gr = plan ? plan->get_kartenboden() : NULL;
-	const koord3d origin = gr ? gr->get_pos() : koord3d::invalid;
+	const koord3d origin = grund_t::get_pos(gr);
 
 #ifdef MULTI_THREAD
 	int error = pthread_mutex_lock(&karte_t::private_car_route_mutex);

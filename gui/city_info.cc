@@ -310,9 +310,7 @@ city_info_t::~city_info_t()
 // returns position of the city center on the map
 koord3d city_info_t::get_weltpos(bool)
 {
-	const grund_t* gr = welt->lookup_kartenboden(city->get_center());
-	const koord3d k = gr ? gr->get_pos() : koord3d::invalid;
-	return k;
+	return grund_t::get_pos(welt->lookup_kartenboden(city->get_center()));
 }
 
 
