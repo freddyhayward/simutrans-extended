@@ -10402,54 +10402,40 @@ void karte_t::get_neighbour_heights(const koord k, sint8 neighbour_height[8][4])
 			}
 		}
 		else {
+			auto set_heights_intern = [=](sint8 _0, sint8 _1, sint8 _2, sint8 _3) {
+				neighbour_height[i][0] = _0;
+				neighbour_height[i][1] = _1;
+				neighbour_height[i][2] = _2;
+				neighbour_height[i][3] = _3;
+			};
+			auto lookup_intern = [=](sint16 x, sint16 y) {
+				return max(lookup_hgt(k+koord(x,y)), get_water_hgt(k));
+			};
+
 			switch(i) {
 				case 0: // nw
-					neighbour_height[i][0] = groundwater;
-					neighbour_height[i][1] = max( lookup_hgt( k+koord(0,0) ), get_water_hgt( k ) );
-					neighbour_height[i][2] = groundwater;
-					neighbour_height[i][3] = groundwater;
+					set_heights_intern(groundwater,lookup_intern(0,0), groundwater, groundwater);
 				break;
 				case 1: // w
-					neighbour_height[i][0] = groundwater;
-					neighbour_height[i][1] = max( lookup_hgt( k+koord(0,1) ), get_water_hgt( k ) );
-					neighbour_height[i][2] = max( lookup_hgt( k+koord(0,0) ), get_water_hgt( k ) );
-					neighbour_height[i][3] = groundwater;
+					set_heights_intern(groundwater, lookup_intern(0,1), lookup_intern(0,0), groundwater);
 				break;
 				case 2: // sw
-					neighbour_height[i][0] = groundwater;
-					neighbour_height[i][1] = groundwater;
-					neighbour_height[i][2] = max( lookup_hgt( k+koord(0,1) ), get_water_hgt( k ) );
-					neighbour_height[i][3] = groundwater;
+					set_heights_intern(groundwater, groundwater, lookup_intern(0,1), groundwater);
 				break;
 				case 3: // s
-					neighbour_height[i][0] = groundwater;
-					neighbour_height[i][1] = groundwater;
-					neighbour_height[i][2] = max( lookup_hgt( k+koord(1,1) ), get_water_hgt( k ) );
-					neighbour_height[i][3] = max( lookup_hgt( k+koord(0,1) ), get_water_hgt( k ) );
+					set_heights_intern(groundwater, groundwater, lookup_intern(1,1), lookup_intern(0,1));
 				break;
 				case 4: // se
-					neighbour_height[i][0] = groundwater;
-					neighbour_height[i][1] = groundwater;
-					neighbour_height[i][2] = groundwater;
-					neighbour_height[i][3] = max( lookup_hgt( k+koord(1,1) ), get_water_hgt( k ) );
+					set_heights_intern(groundwater, groundwater, groundwater, lookup_intern(1,1));
 				break;
 				case 5: // e
-					neighbour_height[i][0] = max( lookup_hgt( k+koord(1,1) ), get_water_hgt( k ) );
-					neighbour_height[i][1] = groundwater;
-					neighbour_height[i][2] = groundwater;
-					neighbour_height[i][3] = max( lookup_hgt( k+koord(1,0) ), get_water_hgt( k ) );
+					set_heights_intern(lookup_intern(1,1), groundwater, groundwater, lookup_intern(1,0));
 				break;
 				case 6: // ne
-					neighbour_height[i][0] = max( lookup_hgt( k+koord(1,0) ), get_water_hgt( k ) );
-					neighbour_height[i][1] = groundwater;
-					neighbour_height[i][2] = groundwater;
-					neighbour_height[i][3] = groundwater;
+					set_heights_intern(lookup_intern(1,0), groundwater, groundwater, groundwater);
 				break;
 				case 7: // n
-					neighbour_height[i][0] = max( lookup_hgt( k+koord(0,0) ), get_water_hgt( k ) );
-					neighbour_height[i][1] = max( lookup_hgt( k+koord(1,0) ), get_water_hgt( k ) );
-					neighbour_height[i][2] = groundwater;
-					neighbour_height[i][3] = groundwater;
+					set_heights_intern(lookup_intern(0,0), lookup_intern(1,0), groundwater, groundwater);
 				break;
 			}
 
