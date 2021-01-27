@@ -1005,14 +1005,14 @@ private:
 	// destroy a vector of start halts every time that the
 	// passenger generation is run.
 	static vector_tpl<nearby_halt_t> *start_halts;
-	static vector_tpl<halthandle_t> *destination_list;
+	static vector_tpl<halthandle_t> *destinations;
 
 	private:
 #else
 	public:
 	static const uint32 marker_index = UINT32_MAX_VALUE;
 	static vector_tpl<nearby_halt_t> start_halts;
-	static vector_tpl<halthandle_t> destination_list;
+	static vector_tpl<halthandle_t> destinations;
 #endif
 
 public:
