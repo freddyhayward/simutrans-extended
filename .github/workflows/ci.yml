@@ -70,7 +70,7 @@ jobs:
           wget http://bridgewater-brunel.me.uk/downloads/nightly/pakset/pak128.britain-ex-nightly.tar.gz -q
           mkdir Pak128.Britain-Ex
           tar -zxf pak128.britain-ex-nightly.tar.gz -C Pak128.Britain-Ex
-          ls
+          ls Pak128.Britain-Ex
           ./simutrans-extended -server -objects Pak128.Britain-Ex -load demo -lang en &
           sleep 10
           kill %1
