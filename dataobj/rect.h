@@ -41,6 +41,8 @@ public:
 
 	rect_t(koord const origin, sint16 const x, sint16 const y);
 
+	~rect_t();
+
 	/**
 	 * @brief Fragment this rect so as to remove area from another rect.
 	 *

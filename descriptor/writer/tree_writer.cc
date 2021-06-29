@@ -49,6 +49,7 @@ void tree_writer_t::write_obj(FILE* fp, obj_node_t& parent, tabfileobj_t& obj)
 			if (str.empty()) {
 				// else missing image
 				dbg->fatal( "Tree", "Missing %s!", buf);
+				exit(1);
 			}
 			keys.at(age).append(str);
 		}

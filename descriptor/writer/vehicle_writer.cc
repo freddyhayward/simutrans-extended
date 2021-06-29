@@ -482,6 +482,7 @@ void vehicle_writer_t::write_obj(FILE* fp, obj_node_t& parent, tabfileobj_t& obj
 				str = obj.get(buf);
 				if (str.empty()) {
 					dbg->fatal( "Vehicle", "Missing freightimage[%d][%s]!", freight, dir_codes[i]);
+					exit(1);
 				}
 				freightkeys.at(i).append(str);
 			}
@@ -538,11 +539,13 @@ void vehicle_writer_t::write_obj(FILE* fp, obj_node_t& parent, tabfileobj_t& obj
 	if (has_8_images && emptykeys.get_count() < 8 && liverykeys_empty.get_count() < 8)
 	{
 		dbg->fatal( "Vehicle", "Missing images (must be either 4 or 8 directions (but %i found)!)\n", emptykeys.get_count() + liverykeys_empty.get_count());
+		exit(1);
 	}
 
 	if (!(freightkeys_old.empty() || liverykeys_freight_old.empty()) && (emptykeys.get_count() != freightkeys_old.get_count() || liverykeys_empty.get_count() != liverykeys_freight_old.get_count()))
 	{
 		dbg->fatal( "Vehicle", "Missing freigthimages (must be either 4 or 8 directions (but %i found)!)\n", freightkeys_old.get_count());
+		exit(1);
 	}
 
 	if(livery_max == 0)
@@ -796,8 +799,10 @@ void vehicle_writer_t::write_obj(FILE* fp, obj_node_t& parent, tabfileobj_t& obj
 			}
 			break;
 		}
-		if (str.size() == 0) {
+		if(str.empty())
+		{
 			dbg->fatal( obj_writer_t::last_name, "Missing liverytype[%i] for %i liveries!", i, livery_max + 1);
+			exit(1);
 		}
 		text_writer_t::instance()->write_obj(fp, node, str.c_str());
 	}

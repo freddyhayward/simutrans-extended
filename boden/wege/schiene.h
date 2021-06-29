@@ -53,7 +53,7 @@ public:
 	schiene_t();
 
 	/**
-	* @param[out] buf additional info is reservation!
+	* @return additional info is reservation!
 	*/
 	void info(cbuffer_t & buf) const OVERRIDE;
 

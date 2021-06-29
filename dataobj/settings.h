@@ -189,11 +189,6 @@ private:
 	bool beginner_mode;
 	sint32 beginner_price_factor;
 
-	/* Industry supply model used.
-	 * 0 : Classic (no flow control?)
-	 * 1 : JIT Classic (maximum transit and storage limited)
-	 * 2 : JIT Version 2 (demand buffers with better consumption model)
-	 */
 	uint8 just_in_time;
 
 	// default 0, will be incremented after each 90 degree rotation until 4
@@ -256,7 +251,8 @@ private:
 	/* maximum number of steps for breath search */
 	sint32 max_transfers;
 
-	/* multiplier for steps on diagonal:
+	/**
+	 * multiplier for steps on diagonal:
 	 * 1024: TT-like, factor 2, vehicle will be too long and too fast
 	 * 724: correct one, factor sqrt(2)
 	 */
@@ -797,16 +793,7 @@ public:
 	void copy_city_road(settings_t const& other);
 
 	// init from this file ...
-	void parse_simuconf(tabfile_t& simuconf, sint16& disp_width, sint16& disp_height, bool& fullscreen, std::string& objfilename);
-
-	// init without screen parameters ...
-	void parse_simuconf(tabfile_t& simuconf) {
-		sint16 idummy = 0;
-		bool bdummy = false;
-		std::string sdummy;
-
-		parse_simuconf(simuconf, idummy, idummy, bdummy, sdummy);
-	}
+	void parse_simuconf( tabfile_t &simuconf, sint16 &disp_width, sint16 &disp_height, sint16 &fullscreen, std::string &objfilename );
 
 	void parse_colours(tabfile_t& simuconf);
 
@@ -844,7 +831,7 @@ public:
 	sint8 get_maximumheight() const { return world_maximum_height; }
 	sint8 get_minimumheight() const { return world_minimum_height; }
 
-	sint8 get_groundwater() const {return (sint8)groundwater;}
+	sint16 get_groundwater() const {return groundwater;}
 
 	double get_max_mountain_height() const {return max_mountain_height;}
 
@@ -873,7 +860,7 @@ public:
 
 	bool get_beginner_mode() const {return beginner_mode;}
 
-	void set_just_in_time(uint8 b) { just_in_time = b; }
+	void set_just_in_time(uint8 v) { just_in_time = v; }
 	uint8 get_just_in_time() const {return just_in_time;}
 
 	void set_default_climates();
@@ -904,7 +891,7 @@ public:
 	sint64 get_starting_money(sint16 year) const;
 
 	bool get_random_pedestrians() const { return random_pedestrians; }
-	void set_random_pedestrians( bool f ) { random_pedestrians = f; }
+	void set_random_pedestrians( bool value ) { random_pedestrians = value; }
 
 	sint16 get_special_building_distance() const { return special_building_distance; }
 

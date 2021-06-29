@@ -741,7 +741,6 @@ void player_t::complete_liquidation()
 								break;
 							case obj_t::gebaeude:
 								hausbauer_t::remove( this, (gebaeude_t *)obj, false );
-								gr = plan->get_boden_bei(b); // fundament has now been replaced by normal ground
 								break;
 							case obj_t::way:
 							{

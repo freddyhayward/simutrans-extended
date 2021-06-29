@@ -211,10 +211,7 @@ void modal_dialogue( gui_frame_t *gui, ptrdiff_t magic, karte_t *welt, bool (*qu
 	env_t::autosave = 0;
 
 	event_t ev;
-	scr_coord_val x = (display_get_width() - gui->get_windowsize().w) / 2;
-	scr_coord_val y = (display_get_height() - gui->get_windowsize().h) / 2;
-	win_clamp_xywh_position(x, y, gui->get_windowsize(), true);
-	create_win( x, y, gui, w_info, magic );
+	create_win( (display_get_width()-gui->get_windowsize().w)/2, (display_get_height()-gui->get_windowsize().h)/2, gui, w_info, magic );
 
 	if(  welt  ) {
 		welt->set_pause( false );
@@ -229,16 +226,13 @@ void modal_dialogue( gui_frame_t *gui, ptrdiff_t magic, karte_t *welt, bool (*qu
 			do {
 				DBG_DEBUG4("modal_dialogue", "calling win_poll_event");
 				win_poll_event(&ev);
-				x = ev.mx;
-				y = ev.my;
-				win_clamp_xywh_position(x, y, scr_size(1, 1), false );
-				ev.mx = x;
-				ev.my = y;
-				x = ev.cx;
-				y = ev.cy;
-				win_clamp_xywh_position(x, y, scr_size(1, 1), false);
-				ev.cx = x;
-				ev.cy = y;
+				// no toolbar events
+				if(  ev.my < env_t::iconsize.h  ) {
+					ev.my = env_t::iconsize.h;
+				}
+				if(  ev.cy < env_t::iconsize.h  ) {
+					ev.cy = env_t::iconsize.h;
+				}
 				if(  ev.ev_class == EVENT_KEYBOARD  &&  ev.ev_code == SIM_KEY_F1  ) {
 					if(  gui_frame_t *win = win_get_top()  ) {
 						if(  const char *helpfile = win->get_help_filename()  ) {
@@ -398,7 +392,7 @@ static void ask_language()
  * This function will be set in the main function as the handler the runtime environment will
  * call in the case it lacks memory for new()
  */
-NORETURN static void sim_new_handler()
+static void sim_new_handler()
 {
 	dbg->fatal("sim_new_handler()", "OUT OF MEMORY or other error allocating new object");
 }
@@ -427,7 +421,7 @@ int simu_main(int argc, char** argv)
 
 	sint16 disp_width = 0;
 	sint16 disp_height = 0;
-	bool fullscreen = false;
+	sint16 fullscreen = false;
 
 	uint32 quit_month = 0x7FFFFFFFu;
 
@@ -720,6 +714,7 @@ int simu_main(int argc, char** argv)
 			env_t::server_announce = 0;
 		}
 	}
+
 	// continue parsing
 	dr_chdir( env_t::data_dir );
 	if(  found_simuconf  ) {
@@ -727,7 +722,6 @@ int simu_main(int argc, char** argv)
 			// we do not allow to change the global font name
 			std::string old_fontname = env_t::fontname;
 			std::string old_soundfont_filename = env_t::soundfont_filename;
-
 			printf("parse_simuconf() at config/simuconf.tab: ");
 			env_t::default_settings.parse_simuconf( simuconf, disp_width, disp_height, fullscreen, env_t::objfilename );
 			simuconf.close();
@@ -756,7 +750,7 @@ int simu_main(int argc, char** argv)
 	if(  const char *fn = gimme_arg(argc, argv, "-objects", 1)  ) {
 		env_t::objfilename = fn;
 		// append slash / replace trailing backslash if necessary
-		size_t len = env_t::objfilename.length();
+		uint16 len = env_t::objfilename.length();
 		if (len > 0) {
 			if (env_t::objfilename[len-1]=='\\') {
 				env_t::objfilename.erase(len-1);
@@ -913,10 +907,7 @@ int simu_main(int argc, char** argv)
 	}
 
 	DBG_MESSAGE("simu_main()", "simgraph_init disp_width=%d, disp_height=%d, fullscreen=%d", disp_width, disp_height, (int)fullscreen);
-	if (!simgraph_init(scr_size(disp_width, disp_height), fullscreen != 0)) {
-		dbg->error("simu_main", "Failed to initialize graphics system.");
-		return EXIT_FAILURE;
-	}
+	simgraph_init(scr_size(disp_width, disp_height), fullscreen != 0);
 	DBG_MESSAGE("simu_main()", ".. results in disp_width=%d, disp_height=%d", display_get_width(), display_get_height());
 
 	// now that the graphics system has already started
@@ -944,6 +935,7 @@ int simu_main(int argc, char** argv)
 		env_t::default_settings.parse_colours( simuconf);
 		simuconf.close();
 	}
+
 	// prepare skins first
 	bool themes_ok = false;
 	if(  const char *themestr = gimme_arg(argc, argv, "-theme", 1)  ) {
@@ -1035,15 +1027,11 @@ int simu_main(int argc, char** argv)
 
 		FILE* const f = dr_fopen(buf, "r");
 		if(  !f  ) {
-			cbuffer_t errmsg;
-			errmsg.printf(
-				"The file 'ground.Outside.pak' was not found in\n"
-				"'%s%s'.\n"
-				"This file is required for a valid pak set (graphics).\n"
-				"Please install and select a valid pak set.",
-				env_t::data_dir, env_t::objfilename.c_str());
-
-			dr_fatal_notify(errmsg);
+			dr_fatal_notify(
+				"*** No pak set found ***\n"
+				"\n"
+				"Most likely, you have no pak set installed.\n"
+				"Please download and install a pak set (graphics).\n");
 			simgraph_exit();
 			return EXIT_FAILURE;
 		}
@@ -1053,10 +1041,11 @@ int simu_main(int argc, char** argv)
 	// now find the pak specific tab file ...
 	obj_conf = env_t::objfilename + path_to_simuconf;
 	if(  simuconf.open(obj_conf.c_str())  ) {
+		sint16 idummy;
+		string dummy;
 		env_t::default_settings.set_way_height_clearance( 0 );
-
 		DBG_DEBUG("karte_t::distribute_groundobjs_cities()","parse_simuconf() at %s: ", obj_conf.c_str());
-		env_t::default_settings.parse_simuconf( simuconf );
+		env_t::default_settings.parse_simuconf( simuconf, idummy, idummy, idummy, dummy );
 		env_t::default_settings.parse_colours( simuconf );
 		pak_diagonal_multiplier = env_t::default_settings.get_pak_diagonal_multiplier();
 		pak_height_conversion_factor = env_t::pak_height_conversion_factor;
@@ -1070,9 +1059,10 @@ int simu_main(int argc, char** argv)
 	// and parse again the user settings
 	obj_conf = string(env_t::user_dir) + "simuconf.tab";
 	if (simuconf.open(obj_conf.c_str())) {
-
+		sint16 idummy;
+		string dummy;
 		dbg->message("simu_main()", "parse_simuconf() at %s: ", obj_conf.c_str());
-		env_t::default_settings.parse_simuconf( simuconf );
+		env_t::default_settings.parse_simuconf( simuconf, idummy, idummy, idummy, dummy );
 		env_t::default_settings.parse_colours( simuconf );
 		simuconf.close();
 	}
@@ -1090,10 +1080,11 @@ int simu_main(int argc, char** argv)
 	// parse ~/simutrans/pakxyz/config.tab"
 	if(  env_t::default_settings.get_with_private_paks()  ) {
 		obj_conf = string(env_t::user_dir) + "addons/" + env_t::objfilename + "config/simuconf.tab";
-
+		sint16 idummy;
+		string dummy;
 		if (simuconf.open(obj_conf.c_str())) {
 			dbg->message("simu_main()","parse_simuconf() at %s: ", obj_conf.c_str());
-			env_t::default_settings.parse_simuconf( simuconf );
+			env_t::default_settings.parse_simuconf( simuconf, idummy, idummy, idummy, dummy );
 			env_t::default_settings.parse_colours( simuconf );
 			simuconf.close();
 		}
@@ -1101,7 +1092,7 @@ int simu_main(int argc, char** argv)
 		obj_conf = string(env_t::user_dir) + "simuconf.tab";
 		if (simuconf.open(obj_conf.c_str())) {
 			dbg->message("simu_main()","parse_simuconf() at %s: ", obj_conf.c_str());
-			env_t::default_settings.parse_simuconf( simuconf );
+			env_t::default_settings.parse_simuconf( simuconf, idummy, idummy, idummy, dummy );
 			env_t::default_settings.parse_colours( simuconf );
 			simuconf.close();
 		}
@@ -1184,10 +1175,7 @@ int simu_main(int argc, char** argv)
 
 	// loading all objects in the pak
 	dbg->message("simu_main()","Reading object data from %s...", env_t::objfilename.c_str());
-	if (!obj_reader_t::load( env_t::objfilename.c_str(), translator::translate("Loading paks ...") )) {
-		dbg->fatal("simu_main()", "Failed to load pakset. Please re-download or select another pakset.");
-	}
-
+	obj_reader_t::load( env_t::objfilename.c_str(), translator::translate("Loading paks ...") );
 	std::string overlaid_warning; // more prominent handling of double objects
 	if(  dbg->had_overlaid()  ) {
 		overlaid_warning = translator::translate("<h1>Error</h1><p><strong>");
@@ -1208,11 +1196,7 @@ int simu_main(int argc, char** argv)
 			dbg->clear_overlaid();
 		}
 	}
-
-	if (!obj_reader_t::finish_rd()) {
-		dbg->fatal("simu_main()", "Failed to load pakset. Please re-download or select another pakset.");
-	}
-
+	obj_reader_t::finish_rd();
 	pakset_info_t::calculate_checksum();
 	pakset_info_t::debug();
 
@@ -1406,8 +1390,8 @@ int simu_main(int argc, char** argv)
 
 	// set the frame per second
 	if(  const char *ref_str = gimme_arg(argc, argv, "-fps", 1)  ) {
-		const int want_refresh = atoi(ref_str);
-		env_t::fps = clamp(want_refresh, (int)env_t::min_fps, (int)env_t::max_fps);
+		int want_refresh = atoi(ref_str);
+		env_t::fps = want_refresh < 5 ? 5 : (want_refresh > 100 ? 100 : want_refresh);
 	}
 
 	// query server stuff

@@ -48,7 +48,7 @@ public:
 	void calc_image() OVERRIDE;
 
 	/**
-	 * Einen Beschreibungsstring fuer das Objekt, der z.B. in einem
+	 * @return Einen Beschreibungsstring fuer das Objekt, der z.B. in einem
 	 * Beobachtungsfenster angezeigt wird.
 	 */
 	void show_info() OVERRIDE;

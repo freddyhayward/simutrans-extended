@@ -83,8 +83,7 @@ void halt_detail_t::init()
 	show_freight_info = false;
 
 	lb_nearby_factory.init("Fabrikanschluss"/* (en)Connected industries */, scr_coord(D_MARGIN_LEFT, 0),
-		color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_player_color_dark),
-		color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_titlebar_player_color_background_brightness), 1);
+		color_idx_to_rgb(halt->get_owner()->get_player_color1()), color_idx_to_rgb(halt->get_owner()->get_player_color1()+2), 1);
 
 	// fill buffer with halt detail
 	goods.recalc_size();
@@ -117,8 +116,7 @@ void halt_detail_t::init()
 	}
 	cont_route.end_table();
 	lb_serve_catg.init("lb_served_goods_and_classes", scr_coord(0, 0),
-		color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_player_color_dark),
-		color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_titlebar_player_color_background_brightness), 1);
+		color_idx_to_rgb(halt->get_owner()->get_player_color1()), color_idx_to_rgb(halt->get_owner()->get_player_color1()+2), 1);
 	cont_route.add_component(&lb_serve_catg);
 
 
@@ -237,8 +235,7 @@ void halt_detail_t::init()
 	cont_route.end_table(); // button table end
 
 	lb_routes.init("Direkt erreichbare Haltestellen", scr_coord(0, 0),
-		color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_player_color_dark),
-		color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_titlebar_player_color_background_brightness), 1);
+		color_idx_to_rgb(halt->get_owner()->get_player_color1()), color_idx_to_rgb(halt->get_owner()->get_player_color1()+2), 1);
 	cont_route.add_component(&lb_routes);
 	cont_route.add_component(&scrolly_route);
 
@@ -294,6 +291,7 @@ bool halt_detail_t::is_weltpos()
 // update all buffers
 void halt_detail_t::update_components()
 {
+	line_number.draw(scr_coord(0,0));
 	waiting_bar->update();
 	bool reset_tab = false;
 	int old_tab = tabs.get_active_tab_index();
@@ -635,10 +633,6 @@ void halt_detail_t::rdwr(loadsave_t *file)
 	}
 	halt_pos.rdwr( file );
 	size.rdwr( file );
-	uint8 selected_tab = tabs.get_active_tab_index();
-	if( file->is_version_ex_atleast(14,41) ) {
-		file->rdwr_byte(selected_tab);
-	}
 	if(  file->is_loading()  ) {
 		halt = welt->lookup( halt_pos )->get_halt();
 		// now we can open the window ...
@@ -646,7 +640,6 @@ void halt_detail_t::rdwr(loadsave_t *file)
 		halt_detail_t *w = new halt_detail_t(halt);
 		create_win(pos.x, pos.y, w, w_info, magic_halt_detail + halt.get_id());
 		w->set_windowsize( size );
-		w->tabs.set_active_tab_index(selected_tab);
 		destroy_win( this );
 	}
 }
@@ -841,9 +834,7 @@ void halt_detail_pas_t::draw(scr_coord offset)
 		if (halt->get_pax_enabled()) {
 			top += LINESPACE;
 			display_heading_rgb(offset.x, offset.y + top, D_DEFAULT_WIDTH - D_MARGINS_X, D_HEADING_HEIGHT,
-				color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_player_color_dark),
-				color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_titlebar_player_color_background_brightness),
-				translator::translate("Around passenger demands"), true, 1);
+				color_idx_to_rgb(halt->get_owner()->get_player_color1()), color_idx_to_rgb(halt->get_owner()->get_player_color1()+2), translator::translate("Around passenger demands"), true, 1);
 			top += D_HEADING_HEIGHT + D_V_SPACE*2;
 			display_proportional_clip_rgb(offset.x + GOODS_SYMBOL_CELL_WIDTH, offset.y + top, translator::translate("hd_wealth"), ALIGN_LEFT, SYSCOL_TEXT, true);
 			display_proportional_clip_rgb(offset.x + class_name_cell_width + GOODS_SYMBOL_CELL_WIDTH + 4, offset.y + top, translator::translate("Population"), ALIGN_LEFT, SYSCOL_TEXT, true);
@@ -914,9 +905,7 @@ void halt_detail_pas_t::draw(scr_coord offset)
 		if ((halt->get_pax_enabled() && arround_population) || halt->get_mail_enabled()) {
 			top += LINESPACE;
 			display_heading_rgb(offset.x, offset.y + top, D_DEFAULT_WIDTH - D_MARGINS_X, D_HEADING_HEIGHT,
-				color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_player_color_dark),
-				color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_titlebar_player_color_background_brightness),
-				translator::translate("Transportation status around this stop"), true, 1);
+				color_idx_to_rgb(halt->get_owner()->get_player_color1()), color_idx_to_rgb(halt->get_owner()->get_player_color1()+2), translator::translate("Transportation status around this stop"), true, 1);
 			top += D_HEADING_HEIGHT + D_V_SPACE * 2;
 			// header
 			display_proportional_clip_rgb(offset.x + D_BUTTON_WIDTH + GOODS_SYMBOL_CELL_WIDTH + 4, offset.y + top, translator::translate("hd_generated"), ALIGN_LEFT, SYSCOL_TEXT, true);
@@ -1116,7 +1105,7 @@ void halt_detail_goods_t::draw(scr_coord offset)
 				if (skinverwaltung_t::alerts) {
 					display_color_img(skinverwaltung_t::alerts->get_image_id(2), offset.x + D_BUTTON_WIDTH, offset.y + top + FIXED_SYMBOL_YOFF, 0, false, false);
 				}
-				display_proportional_clip_rgb(offset.x + D_BUTTON_WIDTH + GOODS_SYMBOL_CELL_WIDTH, offset.y + top, translator::translate("no data"), ALIGN_LEFT, SYSCOL_TEXT_INACTIVE, true);
+				display_proportional_clip_rgb(offset.x + D_BUTTON_WIDTH + GOODS_SYMBOL_CELL_WIDTH, offset.y + top, translator::translate("no data"), ALIGN_LEFT, color_idx_to_rgb(MN_GREY0), true);
 				top += LINESPACE;
 			}
 
@@ -1268,7 +1257,7 @@ void gui_halt_nearby_factory_info_t::draw(scr_coord offset)
 		}
 	}
 	if (!halt->get_fab_list().get_count()) {
-		display_proportional_clip_rgb(offset.x + D_MARGIN_LEFT, offset.y + yoff, translator::translate("keine"), ALIGN_LEFT, SYSCOL_TEXT_INACTIVE, true);
+		display_proportional_clip_rgb(offset.x + D_MARGIN_LEFT, offset.y + yoff, translator::translate("keine"), ALIGN_LEFT, color_idx_to_rgb(MN_GREY0), true);
 		yoff += LINESPACE;
 	}
 	yoff += LINESPACE;
@@ -1319,10 +1308,10 @@ void gui_halt_nearby_factory_info_t::draw(scr_coord offset)
 		}
 
 		if (required_material.empty()) {
-			display_proportional_clip_rgb(offset.x + D_MARGIN_LEFT, offset.y + yoff, translator::translate("keine"), ALIGN_LEFT, SYSCOL_TEXT_INACTIVE, true);
+			display_proportional_clip_rgb(offset.x + D_MARGIN_LEFT, offset.y + yoff, translator::translate("keine"), ALIGN_LEFT, color_idx_to_rgb(MN_GREY0), true);
 		}
 		if (active_product.empty() && inactive_product.empty()) {
-			display_proportional_clip_rgb(offset.x + xoff + D_MARGIN_LEFT, offset.y + yoff, translator::translate("keine"), ALIGN_LEFT, SYSCOL_TEXT_INACTIVE, true);
+			display_proportional_clip_rgb(offset.x + xoff + D_MARGIN_LEFT, offset.y + yoff, translator::translate("keine"), ALIGN_LEFT, color_idx_to_rgb(MN_GREY0), true);
 		}
 		yoff += LINESPACE * max(input_cnt, output_cnt) + 1;
 	}
@@ -1409,9 +1398,7 @@ void gui_halt_service_info_t::update_connections(halthandle_t h)
 	set_margin(scr_size(D_MARGIN_LEFT, D_V_SPACE), scr_size(D_MARGIN_RIGHT, D_V_SPACE));
 
 	// add lines that serve this stop
-	new_component<gui_heading_t>("Lines serving this stop",
-		color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_player_color_dark),
-		color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_titlebar_player_color_background_brightness), 1);
+	new_component<gui_heading_t>("Lines serving this stop", color_idx_to_rgb(halt->get_owner()->get_player_color1()), color_idx_to_rgb(halt->get_owner()->get_player_color1()+2), 1);
 	add_table(6,0)->set_spacing(scr_size(D_H_SPACE, 2));
 	if (halt->registered_lines.empty()) {
 		insert_show_nothing();
@@ -1488,9 +1475,7 @@ void gui_halt_service_info_t::update_connections(halthandle_t h)
 
 	// add lineless convoys which serve this stop
 	new_component<gui_margin_t>(0, D_V_SPACE);
-	new_component<gui_heading_t>("Lineless convoys serving this stop",
-		color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_player_color_dark),
-		color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_titlebar_player_color_background_brightness), 1);
+	new_component<gui_heading_t>("Lineless convoys serving this stop", color_idx_to_rgb(halt->get_owner()->get_player_color1()), color_idx_to_rgb(halt->get_owner()->get_player_color1() + 2), 1);
 	add_table(6, 0)->set_spacing(scr_size(D_H_SPACE, 2));
 	if (halt->registered_convoys.empty()) {
 		insert_show_nothing();
@@ -1874,7 +1859,7 @@ void gui_halt_route_info_t::draw_list_by_catg(scr_coord offset)
 			buf.printf("%ukm", (uint)km_to_halt);
 		}
 		xoff += proportional_string_width("000.00km");
-		display_proportional_clip_rgb(offset.x + xoff, offset.y + yoff, buf, ALIGN_RIGHT, is_walking ? SYSCOL_TEXT_INACTIVE : SYSCOL_TEXT, true);
+		display_proportional_clip_rgb(offset.x + xoff, offset.y + yoff, buf, ALIGN_RIGHT, is_walking ? MN_GREY0 : SYSCOL_TEXT, true);
 		if (is_walking && skinverwaltung_t::on_foot) {
 			display_color_img(skinverwaltung_t::on_foot->get_image_id(0), offset.x + D_MARGIN_LEFT, offset.y + yoff + FIXED_SYMBOL_YOFF, 0, false, false);
 		}
@@ -1990,7 +1975,7 @@ void gui_halt_route_info_t::draw_list_by_catg(scr_coord offset)
 	}
 
 	if (!halt_list.get_count()) {
-		display_proportional_clip_rgb(offset.x + D_MARGIN_LEFT, offset.y + yoff, translator::translate("keine"), ALIGN_LEFT, SYSCOL_TEXT_INACTIVE, true);
+		display_proportional_clip_rgb(offset.x + D_MARGIN_LEFT, offset.y + yoff, translator::translate("keine"), ALIGN_LEFT, MN_GREY0, true);
 		yoff += LINESPACE;
 	}
 	yoff += D_MARGIN_BOTTOM;

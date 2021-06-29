@@ -127,7 +127,8 @@ void loading_trigger_fill_buffer()
 	if (readdata_flag < 0) {
 		pthread_mutex_unlock(&readdata_mutex);
 		// reading thread exited due to error
-		dbg->fatal("loadsave_t::read", "savegame corrupt, not enough data");
+		dbg->fatal("loadsave_t::read","savegame corrupt, not enough data");
+		return;
 	}
 	readdata_flag = 1; // more data please
 
@@ -311,7 +312,7 @@ loadsave_t::file_status_t loadsave_t::rd_open(const char *filename_utf8)
 #if USE_ZSTD
 			stream = new zstd_file_rdwr_stream_t(filename_utf8, false, 0); break;
 #else
-			dbg->warning("loadsave_t::rd_open", "Cannot read from '%s': Unsupported save file compression 'zstd'", filename_utf8);
+			dbg->error("loadsave_t::rd_open", "Unsupported save file compression 'zstd'"); break;
 			return FILE_STATUS_ERR_UNSUPPORTED_COMPRESSION;
 #endif
 
@@ -643,6 +644,7 @@ size_t loadsave_t::read(void *buf, size_t len)
 
 	if(  len>=LS_BUF_SIZE*2  ) {
 		dbg->fatal("loadsave_t::read()","Request for %d too long", len);
+		return 0;
 	}
 	if(  buff[curr_buff].pos+len<=buff[curr_buff].len  ) {
 		// room in the buffer, copy it all
@@ -673,6 +675,7 @@ size_t loadsave_t::read(void *buf, size_t len)
 		// check if enough read
 		if(  len-i>buff[curr_buff].len  ) {
 			dbg->fatal("loadsave_t::read","savegame corrupt, not enough data");
+			return 0;
 		}
 
 		// copy the rest

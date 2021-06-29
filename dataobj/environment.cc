@@ -16,9 +16,6 @@
 #include "../utils/simrandom.h"
 void rdwr_win_settings(loadsave_t *file); // simwin
 
-sint16 env_t::menupos = MENU_TOP;
-bool env_t::reselect_closes_tool = true;
-
 sint8 env_t::pak_tile_height_step = 16;
 sint8 env_t::pak_height_conversion_factor = 1;
 env_t::height_conversion_mode env_t::height_conv_mode = env_t::HEIGHT_CONV_LINEAR;
@@ -324,7 +321,7 @@ void env_t::init()
 	// upper right
 	compass_map_position = ALIGN_RIGHT|ALIGN_TOP;
 	// lower right
-	compass_screen_position = 0; // disbale, other could be ALIGN_RIGHT|ALIGN_BOTTOM;
+	compass_screen_position = 0, // disbale, other could be ALIGN_RIGHT|ALIGN_BOTTOM;
 
 	// Listen on all addresses by default
 	listen.append_unique("::");
@@ -588,18 +585,14 @@ void env_t::rdwr(loadsave_t *file)
 		file->rdwr_bool(classes_waiting_bar);
 		file->rdwr_long(sound_distance_scaling);
 	}
-	if( file->is_version_atleast( 122, 1 ) ) {
+
+	if( file->is_version_atleast( 122, 1 )  ||  file->is_version_ex_atleast(14, 41) ) {
 		plainstring str = soundfont_filename.c_str();
 		file->rdwr_str( str );
 		if(  file->is_loading()  ) {
 			soundfont_filename = str ? str.c_str() : "";
 		}
-	}
-	if( file->is_version_ex_atleast(14,41) ) {
 		file->rdwr_byte(gui_titlebar_player_color_background_brightness);
-		file->rdwr_short(env_t::menupos);
-		env_t::menupos &= 3;
-		file->rdwr_bool( reselect_closes_tool );
 	}
 
 	// server settings are not saved, since they are server specific

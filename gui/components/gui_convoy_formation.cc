@@ -115,7 +115,7 @@ scr_size gui_convoy_formation_t::draw_formation(scr_coord offset) const
 			buf.append(car_number);
 		}
 
-		scr_coord_val left = display_proportional_clip_rgb(offset.x + 2, offset.y, buf, ALIGN_LEFT, v->get_desc()->has_available_upgrade(month_now) ? COL_UPGRADEABLE : SYSCOL_TEXT_WEAK, true);
+		int left = display_proportional_clip_rgb(offset.x + 2, offset.y, buf, ALIGN_LEFT, v->get_desc()->has_available_upgrade(month_now) ? COL_UPGRADEABLE : SYSCOL_TEXT_WEAK, true);
 #ifdef DEBUG
 		if (v->is_reversed()) {
 			display_proportional_clip_rgb(offset.x + 2 + left, offset.y - 2, "*", ALIGN_LEFT, COL_CAUTION, true);
@@ -138,7 +138,7 @@ scr_size gui_convoy_formation_t::draw_formation(scr_coord offset) const
 	}
 
 	scr_size size(grid_width*cnv->get_vehicle_count() + D_MARGIN_LEFT * 2, LINESPACE + VEHICLE_BAR_HEIGHT + 10 + D_SCROLLBAR_HEIGHT);
-	return scr_size(size.w, max(get_size().h, size.h));
+	return size;
 }
 
 scr_size gui_convoy_formation_t::draw_vehicles(scr_coord offset, bool display_images) const
@@ -158,7 +158,7 @@ scr_size gui_convoy_formation_t::draw_vehicles(scr_coord offset, bool display_im
 		s.w += (w*2)/3;
 		s.h = max(s.h, h);
 	}
-	return scr_size(s.w, max(get_size().h, s.h));
+	return s;
 }
 
 scr_size gui_convoy_formation_t::draw_capacities(scr_coord offset) const
@@ -235,5 +235,5 @@ scr_size gui_convoy_formation_t::draw_capacities(scr_coord offset) const
 		}
 	}
 	scr_size size(left, top+LINESPACE);
-	return scr_size(size.w, max(get_size().h, size.h));
+	return size;
 }

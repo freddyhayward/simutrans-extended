@@ -18,14 +18,9 @@ public:
 	monorailboden_t(loadsave_t *file, koord pos ) : grund_t( koord3d(pos,0) ) { rdwr(file); }
 	monorailboden_t(koord3d pos,slope_t::type slope);
 
-public:
-	/// @copydoc grund_t::rdwr
 	void rdwr(loadsave_t *file) OVERRIDE;
 
-	/// @copydoc grund_t::get_name
-	const char *get_name() const OVERRIDE { return "Monorailboden"; }
-
-	/// @coypdoc grund_t::get_typ
+	const char *get_name() const OVERRIDE {return "Monorailboden";}
 	typ get_typ() const OVERRIDE { return monorailboden; }
 };
 

@@ -8,7 +8,6 @@
 #include "../../simcolor.h"
 #include "../../simworld.h"
 
-#include "../../dataobj/environment.h"
 #include "../../dataobj/translator.h"
 #include "../../utils/cbuffer_t.h"
 
@@ -66,7 +65,7 @@ void gui_factory_storage_info_t::draw(scr_coord offset)
 				left = 2;
 				yoff += 2; // box position adjistment
 				// [storage indicator]
-				display_ddd_box_clip_rgb(pos.x + offset.x + left, pos.y + offset.y + yoff + GOODS_COLOR_BOX_YOFF, STORAGE_INDICATOR_WIDTH + 2, GOODS_COLOR_BOX_HEIGHT, SYSCOL_INDICATOR_BORDER1, SYSCOL_INDICATOR_BORDER2);
+				display_ddd_box_clip_rgb(pos.x + offset.x + left, pos.y + offset.y + yoff + GOODS_COLOR_BOX_YOFF, STORAGE_INDICATOR_WIDTH + 2, GOODS_COLOR_BOX_HEIGHT, color_idx_to_rgb(MN_GREY0), color_idx_to_rgb(MN_GREY4));
 				display_fillbox_wh_clip_rgb(pos.x + offset.x + left + 1, pos.y + offset.y + yoff + GOODS_COLOR_BOX_YOFF + 1, STORAGE_INDICATOR_WIDTH, GOODS_COLOR_BOX_HEIGHT-2, color_idx_to_rgb(MN_GREY2), true);
 				if (storage_capacity) {
 					const uint16 colored_width = min(STORAGE_INDICATOR_WIDTH, (uint16)(STORAGE_INDICATOR_WIDTH * stock_quantity / storage_capacity));
@@ -155,7 +154,7 @@ void gui_factory_storage_info_t::draw(scr_coord offset)
 				left = 2;
 				yoff+=2; // box position adjistment
 				// [storage indicator]
-				display_ddd_box_clip_rgb(pos.x + offset.x + left, pos.y + offset.y + yoff + GOODS_COLOR_BOX_YOFF, STORAGE_INDICATOR_WIDTH+2, GOODS_COLOR_BOX_HEIGHT, SYSCOL_INDICATOR_BORDER1, SYSCOL_INDICATOR_BORDER2);
+				display_ddd_box_clip_rgb(pos.x + offset.x + left, pos.y + offset.y + yoff + GOODS_COLOR_BOX_YOFF, STORAGE_INDICATOR_WIDTH+2, GOODS_COLOR_BOX_HEIGHT, color_idx_to_rgb(MN_GREY0), color_idx_to_rgb(MN_GREY4));
 				display_fillbox_wh_clip_rgb(pos.x + offset.x + left+1, pos.y + offset.y + yoff + GOODS_COLOR_BOX_YOFF + 1, STORAGE_INDICATOR_WIDTH, GOODS_COLOR_BOX_HEIGHT-2, color_idx_to_rgb(MN_GREY2), true);
 				if (storage_capacity) {
 					const uint16 colored_width = min(STORAGE_INDICATOR_WIDTH, (uint16)(STORAGE_INDICATOR_WIDTH * stock_quantity / storage_capacity));
@@ -347,7 +346,7 @@ void gui_factory_connection_stat_t::draw(scr_coord offset)
 			display_colorbox_with_tooltip(offset.x + xoff, offset.y + yoff + GOODS_COLOR_BOX_YOFF, GOODS_COLOR_BOX_HEIGHT, GOODS_COLOR_BOX_HEIGHT, transport_goods->get_color(), NULL);
 			xoff += 12;
 			// [distance]
-			col_val = is_within_own_network ? SYSCOL_TEXT : SYSCOL_TEXT_WEAK;
+			col_val = is_within_own_network ? SYSCOL_TEXT : color_idx_to_rgb(COL_GREY3);
 			distance = (double)(shortest_distance(k, fab->get_pos().get_2d()) * welt->get_settings().get_meters_per_tile()) / 1000.0;
 			if (distance < 1)
 			{
@@ -376,12 +375,13 @@ void gui_factory_connection_stat_t::draw(scr_coord offset)
 				buf.clear();
 				if (lead_time == UINT32_MAX_VALUE) {
 					buf.append("--:--:--");
+					col_val = color_idx_to_rgb(COL_GREY4);
 				}
 				else {
 					char lead_time_as_clock[32];
 					welt->sprintf_time_tenths(lead_time_as_clock, 32, lead_time);
 					buf.append(lead_time_as_clock);
-					col_val = is_connected_to_own_network ? SYSCOL_TEXT : SYSCOL_TEXT_INACTIVE;
+					col_val = is_connected_to_own_network ? SYSCOL_TEXT : color_idx_to_rgb(COL_GREY4);
 				}
 				xoff += display_proportional_clip_rgb(offset.x + xoff, offset.y + yoff, buf, ALIGN_LEFT, col_val, true);
 				xoff += D_H_SPACE * 2;
@@ -549,7 +549,7 @@ void gui_factory_nearby_halt_info_t::draw(scr_coord offset)
 			// [name]
 			buf.clear();
 			buf.append(halt->get_name());
-			xoff += display_proportional_clip_rgb(offset.x + xoff, offset.y + yoff, buf, ALIGN_LEFT, color_idx_to_rgb(halt->get_owner()->get_player_color1() + env_t::gui_player_color_dark), true);
+			xoff += display_proportional_clip_rgb(offset.x + xoff, offset.y + yoff, buf, ALIGN_LEFT, color_idx_to_rgb(halt->get_owner()->get_player_color1()), true);
 			xoff += D_H_SPACE * 2;
 
 			bool has_active_freight_connection = false;

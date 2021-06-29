@@ -10,7 +10,6 @@
 #include "../obj/label.h"
 #include "../simworld.h"
 
-char labellist_frame_t::name_filter[256];
 
 static const char *sort_text[labellist::SORT_MODES] = {
 	"hl_btn_sort_name",
@@ -29,21 +28,19 @@ labellist_frame_t::labellist_frame_t() :
 	scrolly(gui_scrolled_list_t::windowskin, labellist_stats_t::compare)
 {
 	set_table_layout(1,0);
-	add_table(2,2);
+	add_table(3, 2);
 	{
 		// 1st row
 		new_component<gui_label_t>("hl_txt_sort");
+		new_component<gui_label_t>("Filter:");
 
-		add_table(2, 1);
-		{
-			new_component<gui_label_t>("Filter:");
-			name_filter_input.set_text(name_filter, lengthof(name_filter));
-			add_component(&name_filter_input);
-		}
-		end_table();
+		filter.init( button_t::square_automatic, "Active player only");
+		filter.pressed = labellist_stats_t::filter;
+		filter.add_listener( this );
+		add_component(&filter);
 
 		// 2nd row
-		add_table(2,1);
+		add_table(3, 1);
 		{
 			for (int i = 0; i < labellist::SORT_MODES; i++) {
 				sortedby.new_component<label_sort_item_t>(i);
@@ -54,42 +51,39 @@ labellist_frame_t::labellist_frame_t() :
 			sortedby.add_listener(this);
 			add_component(&sortedby);
 
-			// sort asc/desc switching button
-			sort_order.init(button_t::sortarrow_state, "");
-			sort_order.set_tooltip(translator::translate("hl_btn_sort_order"));
-			sort_order.add_listener(this);
-			sort_order.pressed = labellist_stats_t::sortreverse;
-			add_component(&sort_order);
+			// sort ascend/descend button
+			sort_asc.init(button_t::arrowup_state, "");
+			sort_asc.set_tooltip(translator::translate("hl_btn_sort_asc"));
+			sort_asc.add_listener(this);
+			sort_asc.pressed = labellist_stats_t::sortreverse;
+			add_component(&sort_asc);
+
+			sort_desc.init(button_t::arrowdown_state, "");
+			sort_desc.set_tooltip(translator::translate("hl_btn_sort_desc"));
+			sort_desc.add_listener(this);
+			sort_desc.pressed = !labellist_stats_t::sortreverse;
+			add_component(&sort_desc);
 		}
 		end_table();
 
-		add_table(3,1);
-		{
-			new_component<gui_margin_t>(LINESPACE);
+		new_component<gui_empty_t>();
 
-			if (!welt->get_settings().regions.empty()) {
-				//region_selector
-				region_selector.new_component<gui_scrolled_list_t::const_text_scrollitem_t>(translator::translate("All regions"), SYSCOL_TEXT);
+		if (!welt->get_settings().regions.empty()) {
+			//region_selector
+			region_selector.new_component<gui_scrolled_list_t::const_text_scrollitem_t>(translator::translate("All regions"), SYSCOL_TEXT);
 
-				for (uint8 r = 0; r < welt->get_settings().regions.get_count(); r++) {
-					region_selector.new_component<gui_scrolled_list_t::const_text_scrollitem_t>(translator::translate(welt->get_settings().regions[r].name.c_str()), SYSCOL_TEXT);
-				}
-				region_selector.set_selection(labellist_stats_t::region_filter);
-				region_selector.set_width_fixed(true);
-				region_selector.set_size(scr_size(D_BUTTON_WIDTH*1.5, D_EDIT_HEIGHT));
-				region_selector.add_listener(this);
-				add_component(&region_selector);
+			for (uint8 r = 0; r < welt->get_settings().regions.get_count(); r++) {
+				region_selector.new_component<gui_scrolled_list_t::const_text_scrollitem_t>(translator::translate(welt->get_settings().regions[r].name.c_str()), SYSCOL_TEXT);
 			}
-			else {
-				new_component<gui_empty_t>();
-			}
-
-			filter.init( button_t::square_automatic, "Active player only");
-			filter.pressed = labellist_stats_t::filter;
-			filter.add_listener( this );
-			add_component(&filter);
+			region_selector.set_selection(labellist_stats_t::region_filter);
+			region_selector.set_width_fixed(true);
+			region_selector.set_size(scr_size(D_BUTTON_WIDTH*1.5, D_EDIT_HEIGHT));
+			region_selector.add_listener(this);
+			add_component(&region_selector);
 		}
-		end_table();
+		else {
+			new_component<gui_empty_t>();
+		}
 	}
 	end_table();
 
@@ -105,9 +99,6 @@ labellist_frame_t::labellist_frame_t() :
 
 void labellist_frame_t::fill_list()
 {
-	strcpy(last_name_filter, name_filter);
-	label_count = welt->get_label_list().get_count();
-
 	scrolly.clear_elements();
 	FOR(slist_tpl<koord>, const& pos, welt->get_label_list()) {
 		if (labellist_stats_t::region_filter && (labellist_stats_t::region_filter - 1) != welt->get_region(pos)) {
@@ -118,9 +109,7 @@ void labellist_frame_t::fill_list()
 		// some old version games don't have label nor name.
 		// Check them to avoid crashes.
 		if(label  &&  name  &&  (!labellist_stats_t::filter  ||  (label  &&  (label->get_owner() == welt->get_active_player())))) {
-			if(  name_filter[0] == 0  ||  utf8caseutf8(name, name_filter)  ) {
-				scrolly.new_component<labellist_stats_t>(pos);
-			}
+			scrolly.new_component<labellist_stats_t>(pos);
 		}
 	}
 	scrolly.sort(0);
@@ -156,10 +145,11 @@ bool labellist_frame_t::action_triggered( gui_action_creator_t *comp,value_t v)
 		labellist_stats_t::region_filter = max(0, v.i);
 		fill_list();
 	}
-	else if (comp == &sort_order) {
+	else if (comp == &sort_asc || comp == &sort_desc) {
 		labellist_stats_t::sortreverse = !labellist_stats_t::sortreverse;
 		scrolly.sort(0);
-		sort_order.pressed = labellist_stats_t::sortreverse;
+		sort_asc.pressed = labellist_stats_t::sortreverse;
+		sort_desc.pressed = !labellist_stats_t::sortreverse;
 	}
 	else if (comp == &filter) {
 		labellist_stats_t::filter = !labellist_stats_t::filter;
@@ -171,32 +161,9 @@ bool labellist_frame_t::action_triggered( gui_action_creator_t *comp,value_t v)
 
 void labellist_frame_t::draw(scr_coord pos, scr_size size)
 {
-	if(  label_count != welt->get_label_list().get_count()  ||  strcmp(last_name_filter, name_filter)  ) {
+	if(  count_label() != (uint32)scrolly.get_count()  ) {
 		fill_list();
 	}
 
 	gui_frame_t::draw(pos, size);
-}
-
-
-void labellist_frame_t::rdwr(loadsave_t* file)
-{
-	scr_size size = get_windowsize();
-
-	size.rdwr(file);
-	scrolly.rdwr(file);
-	file->rdwr_str(name_filter, lengthof(name_filter));
-	file->rdwr_byte(labellist_stats_t::sort_mode);
-	file->rdwr_bool(labellist_stats_t::sortreverse);
-	file->rdwr_bool(labellist_stats_t::filter);
-	file->rdwr_byte(labellist_stats_t::region_filter);
-	if (file->is_loading()) {
-		scrolly.sort(0);
-		sortedby.set_selection(labellist_stats_t::sort_mode);
-		sort_order.pressed = labellist_stats_t::sortreverse;
-		filter.pressed = labellist_stats_t::filter;
-		region_selector.set_selection(labellist_stats_t::region_filter);
-		fill_list();
-		set_windowsize(size);
-	}
 }

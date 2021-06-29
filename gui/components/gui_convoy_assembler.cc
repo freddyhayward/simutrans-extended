@@ -998,7 +998,7 @@ void gui_convoy_assembler_t::draw(scr_coord parent_pos)
 			money_to_string(buf, total_cost / 100.0);
 			// FIXME: The correct term must be used for the translation of "Cost:"
 			txt_convoi_cost.append(translator::translate("Cost:"));
-			const PIXVAL col_cost = (uint32)resale_value == total_cost ? SYSCOL_TEXT : COL_OUT_OF_PRODUCTION;
+			const PIXVAL col_cost = (uint32)resale_value == total_cost ? SYSCOL_TEXT : COL_SOFT_BLUE;
 			display_proportional_clip_rgb(parent_pos.x + D_MARGIN_LEFT + proportional_string_width(translator::translate("Cost:")) + 10, parent_pos.y + pos.y + lb_convoi_cost.get_pos().y, buf, ALIGN_LEFT, col_cost, true);
 
 			txt_convoi_maintenance.printf(translator::translate("Maintenance: %1.2f$/km, %1.2f$/month\n"), (double)maint_per_km / 100.0, (double)maint_per_month / 100.0);
@@ -2303,7 +2303,7 @@ void gui_convoy_assembler_t::draw_vehicle_info_text(const scr_coord& pos)
 					txt_convoi_number.clear();
 					txt_convoi_number.printf("%.2s", cnv->get_car_numbering(sel_index) < 0 ? translator::translate("LOCO_SYM") : "");
 					txt_convoi_number.printf("%d", abs(cnv->get_car_numbering(sel_index)));
-					lb_convoi_number.set_color(veh_type->has_available_upgrade(welt->get_timeline_year_month()) == 2? COL_UPGRADEABLE : SYSCOL_TEXT_HIGHLIGHT);
+					lb_convoi_number.set_color(veh_type->has_available_upgrade(welt->get_timeline_year_month()) == 2? COL_UPGRADEABLE : COL_WHITE);
 					lb_convoi_number.set_pos(scr_coord((grid.x - grid_dx)*sel_index + D_MARGIN_LEFT, 4));
 
 

@@ -193,11 +193,13 @@ objlist_t::~objlist_t()
 }
 
 
-void objlist_t::set_capacity(uint16 req_cap)
+void objlist_t::set_capacity(uint16 new_cap)
 {
 	// DBG_MESSAGE("objlist_t::set_capacity()", "old cap=%d, new cap=%d", capacity, new_cap);
 
-	const uint8 new_cap = req_cap >= 255 ? 254 : (uint8)req_cap;
+	if(new_cap>=255) {
+		new_cap = 254;
+	}
 
 	// a single object is stored differentially
 	if(new_cap==0) {
@@ -222,8 +224,9 @@ void objlist_t::set_capacity(uint16 req_cap)
 		}
 		capacity = top;
 	}
-	else if(capacity<=1) {
-		// this means we extend from 0 or 1 elements to more than 1
+	// a single object is stored differentially
+	else if(capacity<=1  &&  new_cap>1) {
+		// if we reach here, new_cap>1 and (capacity==0 or capacity>1)
 		obj_t *tmp=obj.one;
 		obj.some = dl_alloc(new_cap);
 		MEMZERON(obj.some, new_cap);
@@ -1285,20 +1288,19 @@ void objlist_t::check_season(const bool calc_only_season_change)
 		}
 	}
 	else {
-		// copy object pointers to check them
-		vector_tpl<obj_t*> list;
+		// only here delete list is needed!
+		slist_tpl<obj_t *> to_remove;
 
 		for(  uint8 i = 0;  i < top;  i++  ) {
-			list.append(obj.some[i]);
-		}
-		// now work on the copied list
-		// check_season may change this list (by planting new trees)
-		for(  uint8 i = 0, end = list.get_count();  i < end;  i++  ) {
-			obj_t *check_obj = list[i];
+			obj_t *check_obj = obj.some[i];
 			if(  !check_obj->check_season( calc_only_season_change )  ) {
-				delete check_obj;
+				to_remove.insert( check_obj );
 			}
 		}
 
+		// delete all objects, which do not want to step any more
+		while(  !to_remove.empty()  ) {
+			delete to_remove.remove_first();
+		}
 	}
 }

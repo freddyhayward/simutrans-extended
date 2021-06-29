@@ -8,16 +8,19 @@
 
 
 #include "../simmem.h"
-#include "../simtypes.h"
 
 
 /**
- * my try on a binary heap template,
+ *
+ * my try on a binary heap template
  * inspired by the pathfinder of OTTD written by kuDr
  *
  * For information about Binary Heap algorithm,
- *   see: https://en.wikipedia.org/wiki/Binary_heap
+ *   see: http://www.policyalmanac.org/games/binaryHeaps.htm
  */
+
+#include "../simtypes.h"
+
 template <class T>
 class binary_heap_tpl
 {

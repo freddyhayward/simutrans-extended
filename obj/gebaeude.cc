@@ -798,8 +798,7 @@ void gebaeude_t::show_info()
 		ptr.fab->show_info();
 		return;
 	}
-
-	const uint32 old_count = win_get_open_count();
+	int old_count = win_get_open_count();
 
 	if (is_headquarter()) {
 		create_win( new headquarter_info_t(get_owner()), w_info, magic_headquarter+get_owner()->get_player_nr() );

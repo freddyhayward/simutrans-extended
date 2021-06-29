@@ -194,8 +194,6 @@ typedef unsigned int FLAGGED_PIXVAL;
 #define SYSCOL_STATUSBAR_DIVIDER            gui_theme_t::gui_color_statusbar_divider
 #define SYSCOL_HIGHLIGHT                    gui_theme_t::gui_highlight_color
 #define SYSCOL_SHADOW                       gui_theme_t::gui_shadow_color
-#define SYSCOL_INDICATOR_BORDER1            gui_theme_t::gui_color_indicator_border_top_left
-#define SYSCOL_INDICATOR_BORDER2            gui_theme_t::gui_color_indicator_border_bottom_right
 #define SYSCOL_LOADINGBAR_INNER             gui_theme_t::gui_color_loadingbar_inner
 #define SYSCOL_LOADINGBAR_PROGRESS          gui_theme_t::gui_color_loadingbar_progress
 #define SYSCOL_OBSOLETE                     gui_theme_t::gui_color_obsolete

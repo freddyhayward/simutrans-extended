@@ -149,9 +149,7 @@ enum {
 	SKIN_WINDOW_RESIZE,
 	SKIN_GADGET_GOTOPOS,
 //	SKIN_GADGET_BUTTON,
-	SKIN_GADGET_NOTLOCKED,
-	SKIN_GADGET_LOCKED,
-	SKIN_GADGET_COUNT,// maximum number, NOT AN IMAGE
+	SKIN_GADGET_COUNT, // maximum number, NOT AN IMAGE
 
 	// scrollbars horizontal
 	SKIN_BUTTON_ARROW_LEFT = 0,
@@ -248,16 +246,14 @@ public:
 	static PIXVAL gui_color_statusbar_divider;            //@< Color to draw statusbar divider
 	static PIXVAL gui_highlight_color;                    //@< Color to draw highlight dividers (tabs)
 	static PIXVAL gui_shadow_color;                       //@< Color to draw shadowed dividers (tabs)
-	static PIXVAL gui_color_indicator_border_top_left;
-	static PIXVAL gui_color_indicator_border_bottom_right;
 	static PIXVAL gui_color_loadingbar_inner;
 	static PIXVAL gui_color_loadingbar_progress;
 	static PIXVAL gui_color_obsolete;                     //@< Color for obsolete convois/server entries
 	static PIXVAL gui_color_out_of_production;            //@< (EX unique) Color for convoy that is no longer in production (but not obsolete)
 	static PIXVAL gui_color_empty;                        //@< Color for empty entries
-	static PIXVAL gui_color_chat_window_network_transparency; //@< Color if chat window is transparent in network mode
 	static PIXVAL gui_color_up_pointing_triangle;         //@< (EX unique) Color to draw an upward triangle indicating an increase in the number
 	static PIXVAL gui_color_down_pointing_triangle;       //@< (EX unique) Color to draw an downward triangle indicating an decrease in the number
+
 	/// @}
 
 	/// @name GUI element sizes used by gui components
@@ -318,7 +314,7 @@ public:
 	static image_id pos_button_img[3];
 
 	static bool gui_drop_shadows;
-	static bool pressed_button_sinks;
+
 
 public:
 	// default dimensions and colors

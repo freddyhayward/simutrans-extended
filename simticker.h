@@ -10,9 +10,11 @@
 #include "simcolor.h"
 #include "display/simgraph.h"
 
-#define TICKER_V_SPACE (2) // Vertical offset of ticker text
-#define TICKER_HEIGHT  (LINESPACE+2*TICKER_V_SPACE)
+// ticker height
+#define TICKER_HEIGHT (LINESPACE+3)
 
+// ticker vertical position from bottom of screen
+extern uint16 TICKER_YPOS_BOTTOM;
 
 class koord;
 

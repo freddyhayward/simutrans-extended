@@ -316,7 +316,7 @@ public:
 	};
 	bool do_alternative_seats_calculation; //for optimisations purpose
 
-	const slist_tpl<tile_t> &get_tiles() const { return tiles; }
+	const slist_tpl<tile_t> &get_tiles() const { return tiles; };
 
 	bool is_within_walking_distance_of(halthandle_t halt) const;
 
@@ -722,7 +722,9 @@ public:
 	 * Fetches goods from this halt
 	 * @param load Output parameter. Goods will be put into this list, the vehicle has to load them.
 	 * @param good_category Specifies the kind of good (or compatible goods) we are requesting to fetch from this stop.
-	 * @param requested_amount How many units of the cargo we can fetch.
+	 * @param amount How many units of the cargo we can fetch.
+	 * @param schedule Schedule of the vehicle requesting the fetch.
+	 * @param player Company that's requesting the fetch.
 	 */
 	bool fetch_goods( slist_tpl<ware_t> &load, const goods_desc_t *good_category, sint32 requested_amount, const schedule_t *schedule, const player_t *player, convoi_t* cnv, bool overcrowd, const uint8 g_class, const bool use_lower_classes, bool& other_classes_available, const bool mixed_load_prohibition, uint8 goods_restriction);
 
@@ -761,12 +763,14 @@ public:
 	uint8 get_empty_lane(const grund_t *gr, convoihandle_t cnv) const;
 
 	/**
-	 * @param[out] buf Goods description text
+	 * @param buf the buffer to fill
+	 * @return Goods description text (buf)
 	 */
 	void get_freight_info(cbuffer_t & buf);
 
 	/**
-	 * @param[out] buf short list of the waiting goods (i.e. 110 Wood, 15 Coal)
+	 * @param buf the buffer to fill
+	 * @return short list of the waiting goods (i.e. 110 Wood, 15 Coal)
 	 */
 	void get_short_freight_info(cbuffer_t & buf) const;
 

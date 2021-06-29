@@ -793,6 +793,7 @@ bool stadt_t::cityrules_init(const std::string &objfilename)
 	if (!cityconf.open((user_dir+"cityrules.tab").c_str())) {
 		if (!cityconf.open((objfilename+"config/cityrules.tab").c_str())) {
 			dbg->fatal("stadt_t::init()", "Can't read cityrules.tab" );
+			return false;
 		}
 	}
 
@@ -894,7 +895,7 @@ bool stadt_t::cityrules_init(const std::string &objfilename)
 		}
 
 		// put rule into memory
-		const uint8 offset = (7 - (uint8)size) / 2;
+		const uint8 offset = (7 - (uint)size) / 2;
 		for (uint y = 0; y < size; y++) {
 			for (uint x = 0; x < size; x++) {
 				const char flag = rule[x + y * (size + 1)];
@@ -942,7 +943,7 @@ bool stadt_t::cityrules_init(const std::string &objfilename)
 		}
 
 		// put rule into memory
-		const uint8 offset = (7 - (uint8)size) / 2;
+		const uint8 offset = (7 - (uint)size) / 2;
 		for (uint y = 0; y < size; y++) {
 			for (uint x = 0; x < size; x++) {
 				const char flag = rule[x + y * (size + 1)];

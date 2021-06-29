@@ -2311,6 +2311,8 @@ alt_route_and_callon
 副本線誘導
 Alternate directions
 交互に運転方向を反転
+Arrivals from\n
+到着予想時間:\n
 aspects
 現示数
 assets
@@ -2930,7 +2932,7 @@ no_route_too_complex_message
 no_time_entry
 記録なし
 normal_unidirectional_order
-順行路
+停車順: 往路
 North To South
 南北方向
 north_and_east
@@ -3146,9 +3148,9 @@ Revenue from electricity transmission
 revenue of
 収入:
 reverse route
-逆行路
+経路の反転
 reversed_unidirectional_order
-逆行路
+停車順: 復路
 Reversing
 折り返し中
 Reversing. %s left
@@ -3530,7 +3532,7 @@ West To East
 When adding convoys to the line, every second convoy will follow it in the reverse direction.
 路線に車両を追加したとき、車両が交互に反対方向へ運行するように設定します。
 When this is set, the vehicle will visit stops in reverse order.
-このチェックを有効にすると、スケジュールの行路を逆順に巡回します。
+この項目が有効な場合、車両は逆順に停車します。
 Whether the lighting in the main game window simulates a periodic transition between day and night.
 一定の時間間隔で日中の表示と夜間の表示を切り替えるかどうかを設定します。
 with_wayobj
@@ -3712,9 +3714,9 @@ Starting acceleration:
 Sell for %s
 %sで売却
 cl_btn_general
-編成外観
+編成外観・積載率
 cl_btn_payload
-積載状況
+カテゴリ別積載状況
 cl_btn_formation
 編成図
 available_company_takeovers:
@@ -3863,8 +3865,6 @@ traffic settings
 交通設定
 Convoi following mode
 編成追跡時のカメラ動作
-Toolbar position:
-ツールバー表示位置：
 tooltip/coverage
 ツールチップ／有効範囲
 Grid

@@ -11,7 +11,6 @@
 #include "../obj_node_info.h"
 #include "../goods_desc.h"
 #include "../../network/pakset_info.h"
-#include "../../tpl/array_tpl.h"
 
 
 void goods_reader_t::register_obj(obj_desc_t *&data)
@@ -37,22 +36,25 @@ bool goods_reader_t::successfully_loaded() const
 
 obj_desc_t * goods_reader_t::read_node(FILE *fp, obj_node_info_t &node)
 {
-	array_tpl<char> desc_buf(node.size);
-	if (fread(desc_buf.begin(), node.size, 1, fp) != 1) {
-		return NULL;
-	}
-	char *p = desc_buf.begin();
+	ALLOCA(char, desc_buf, node.size);
 
-	// old versions of PAK files have no version stamp.
-	// But we know, the higher most bit was always cleared.
-	const uint16 v = decode_uint16(p);
-	int version = v & 0x8000 ? v & 0x7FFF : 0;
+	goods_desc_t *desc = new goods_desc_t();
 
 	// some defaults
-	goods_desc_t *desc = new goods_desc_t();
 	desc->speed_bonus = 0;
 	desc->weight_per_unit = 100;
 	desc->color = 255;
+
+	// Read data
+	fread(desc_buf, node.size, 1, fp);
+
+	char * p = desc_buf;
+
+	// old versions of PAK files have no version stamp.
+	// But we know, the higher most bit was always cleared.
+
+	const uint16 v = decode_uint16(p);
+	int version = v & 0x8000 ? v & 0x7FFF : 0;
 
 	// Whether the read file is from Simutrans-Extended
 	//@author: jamespetts

@@ -12,6 +12,8 @@
 #include <syslog.h>
 #endif
 
+#define NO_LOG_EXTERNALS
+
 #include "log.h"
 #include "../simdebug.h"
 #include "../sys/simsys.h"
@@ -182,7 +184,7 @@ void log_t::error(const char *who, const char *format, ...)
 			}
 
 			fprintf(log ,"For help with this error or to file a bug report please see the Simutrans forum:\n");
-			fprintf(log ,"https://forum.simutrans.com\n");
+			fprintf(log ,"http://forum.simutrans.com\n");
 		}
 		va_end(argptr);
 
@@ -193,7 +195,7 @@ void log_t::error(const char *who, const char *format, ...)
 			fprintf(tee,"\n");
 
 			fprintf(tee ,"For help with this error or to file a bug report please see the Simutrans forum:\n");
-			fprintf(tee ,"https://forum.simutrans.com\n");
+			fprintf(tee ,"http://forum.simutrans.com\n");
 		}
 		va_end(argptr);
 
@@ -251,13 +253,7 @@ void log_t::fatal(const char *who, const char *format, ...)
 	va_start(argptr, format);
 
 	static char formatbuffer[512];
-	sprintf( formatbuffer,
-		"FATAL ERROR: %s - %s\n"
-		"Aborting program execution ...\n"
-		"\n"
-		"For help with this error or to file a bug report please see the Simutrans forum at\n"
-		"https://forum.simutrans.com\n",
-		who, format );
+	sprintf( formatbuffer, "FATAL ERROR: %s - %s\nAborting program execution ...\n\nFor help with this error or to file a bug report please see the Simutrans forum at\nhttp://forum.simutrans.com\n", who, format );
 
 	static char buffer[8192];
 	int n = vsprintf( buffer, formatbuffer, argptr );
@@ -287,7 +283,7 @@ void log_t::fatal(const char *who, const char *format, ...)
 
 #if defined MAKEOBJ
 	(void)n;
-	exit(EXIT_FAILURE);
+	exit(1);
 #elif defined NETTOOL
 	// no display available
 	(void)n;

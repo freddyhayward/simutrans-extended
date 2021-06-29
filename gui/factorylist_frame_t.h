@@ -7,7 +7,6 @@
 #define GUI_FACTORYLIST_FRAME_T_H
 
 
-#include "simwin.h"
 #include "gui_frame.h"
 #include "components/gui_scrollpane.h"
 #include "components/gui_label.h"
@@ -29,15 +28,11 @@ private:
 
 	gui_combobox_t	sortedby;
 	gui_combobox_t	freight_type_c;
-	button_t sorteddir;
+	button_t sort_asc, sort_desc;
 	button_t filter_within_network, btn_display_mode;
 	factorylist_stats_t stats;
 	gui_scrollpane_t scrolly;
 	gui_aligned_container_t list;
-
-	//static char name_filter[256];
-	//char last_name_filter[256];
-	//gui_textinput_t name_filter_input;
 
 	/*
 	 * All filter settings are static, so they are not reset each
@@ -73,10 +68,6 @@ public:
 
 	// FIXME: The GUI overhaul has been partially incorporated. The list has not been auto-aligned yet
 	//void map_rotate90( sint16 ) OVERRIDE { fill_list(); }
-
-	void rdwr(loadsave_t* file) OVERRIDE;
-
-	uint32 get_rdwr_id() OVERRIDE { return magic_factorylist; }
 };
 
 #endif

@@ -180,10 +180,10 @@ public:
 		void *ev_ptr;
 	};
 
-	scr_coord_val mx, my;
+	int mx, my;
 
 	/// position of last mouse click
-	scr_coord_val cx, cy;
+	int cx, cy;
 
 	/// new window size for SYSTEM_RESIZE
 	scr_size new_window_size;

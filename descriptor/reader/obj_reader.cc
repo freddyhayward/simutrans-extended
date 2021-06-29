@@ -101,17 +101,12 @@ bool obj_reader_t::load(const char *path, const char *message)
 
 				find.search(buf, "pak");
 				FOR(searchfolder_t, const& i, find) {
-					if (!read_file(i)) {
-						return false;
-					}
+					read_file(i);
 				}
 			}
-
 			fclose(listfp);
 			return true;
 		}
-
-		return false;
 	}
 	else {
 		// No dat-file? Then is the list a directory?
@@ -131,24 +126,22 @@ bool obj_reader_t::load(const char *path, const char *message)
 
 		if(drawing  &&  skinverwaltung_t::biglogosymbol==NULL) {
 			display_fillbox_wh_rgb( 0, 0, display_get_width(), display_get_height(), color_idx_to_rgb(COL_BLACK), true );
-			if (!read_file((name+"symbol.BigLogo.pak").c_str())) {
-				dbg->warning("obj_reader_t::load()", "File 'symbol.BigLogo.pak' cannot be read, startup logo will not be displayed!");
-			}
+			read_file((name+"symbol.BigLogo.pak").c_str());
+DBG_MESSAGE("obj_reader_t::load()","big logo %p", skinverwaltung_t::biglogosymbol);
 		}
 
 		loadingscreen_t ls( message, max, true );
 
 		if(  ground_desc_t::outside==NULL  ) {
 			// defining the pak tile width ....
-			if (!read_file((name+"ground.Outside.pak").c_str())) {
-				return false;
-			}
-
+			read_file((name+"ground.Outside.pak").c_str());
 			if(ground_desc_t::outside==NULL) {
-				dbg->warning("obj_reader_t::load()", "ground.Outside.pak not found, cannot guess tile size! (driving on left will not work!)");
+				dbg->warning("obj_reader_t::load()","ground.Outside.pak not found, cannot guess tile size! (driving on left will not work!)");
 			}
-			else if (char const* const copyright = ground_desc_t::outside->get_copyright()) {
-				ls.set_info(copyright);
+			else {
+				if (char const* const copyright = ground_desc_t::outside->get_copyright()) {
+					ls.set_info(copyright);
+				}
 			}
 		}
 
@@ -156,10 +149,7 @@ DBG_MESSAGE("obj_reader_t::load()", "reading from '%s'", name.c_str());
 
 		uint n = 0;
 		FORX(searchfolder_t, const& i, find, ++n) {
-			if (!read_file(i)) {
-				dbg->warning("obj_reader_t::load()", "Cannot load '%s', some objects might be unavailable!", i);
-			}
-
+			read_file(i);
 			if ((n & step) == 0 && drawing) {
 				ls.set_progress(n);
 			}
@@ -168,116 +158,88 @@ DBG_MESSAGE("obj_reader_t::load()", "reading from '%s'", name.c_str());
 
 		return find.begin()!=find.end();
 	}
+	return false;
 }
 
 
-bool obj_reader_t::read_file(const char *name)
+void obj_reader_t::read_file(const char *name)
 {
 	// added trace
 	DBG_DEBUG("obj_reader_t::read_file()", "filename='%s'", name);
 
-	FILE* const fp = dr_fopen(name, "rb");
-	if (!fp) {
-		dbg->error("obj_reader_t::read_file()", "reading '%s' failed!", name);
-		return false;
-	}
+	if (FILE* const fp = dr_fopen(name, "rb")) {
+		sint32 n = 0;
 
-	// This is the normal header reading code
-	int c;
-	uint32 n = 0;
+		// This is the normal header reading code
+		int c;
+		do {
+			c = fgetc(fp);
+			n ++;
+		} while(!feof(fp) && c != 0x1a);
 
-	do {
-		c = fgetc(fp);
-		n ++;
-	} while(c != EOF && c != 0x1a);
-
-	if(c == EOF) {
-		dbg->error("obj_reader_t::read_file()", "unexpected end of file after %u bytes while reading '%s'!",n, name);
-		fclose(fp);
-		return false;
-	}
-
-	// Compiled Version
-	char dummy[4];
-	n = fread(dummy, 4, 1, fp);
-	if (n != 1) {
-		fclose(fp);
-		return false;
-	}
-
-	char *p = dummy;
-	const uint32 version = decode_uint32(p);
-
-	DBG_DEBUG("obj_reader_t::read_file()", "read %u blocks, file version is %x", n, version);
-
-	if(version <= COMPILER_VERSION_CODE) {
-		obj_desc_t *data = NULL;
-		if (!read_nodes(fp, data, 0, version)) {
-			fclose(fp);
-			return false;
+		if(feof(fp)) {
+			dbg->error("obj_reader_t::read_file()", "unexpected end of file after %d bytes while reading '%s'!",n, name);
 		}
+		else {
+//			DBG_DEBUG("obj_reader_t::read_file()", "skipped %d header bytes", n);
+		}
+
+		// Compiled Version
+		uint32 version = 0;
+		char dummy[4], *p;
+		p = dummy;
+
+		n = fread(dummy, 4, 1, fp);
+		version = decode_uint32(p);
+
+		DBG_DEBUG("obj_reader_t::read_file()", "read %d blocks, file version is %x", n, version);
+
+		if(version <= COMPILER_VERSION_CODE) {
+			obj_desc_t *data = NULL;
+			read_nodes(fp, data, 0, version );
+		}
+		else {
+			DBG_DEBUG("obj_reader_t::read_file()","version of '%s' is too old, %d instead of %d", name, version, COMPILER_VERSION_CODE );
+		}
+		fclose(fp);
 	}
 	else {
-		DBG_DEBUG("obj_reader_t::read_file()","version of '%s' is too old, %u instead of %u", name, version, COMPILER_VERSION_CODE );
-		fclose(fp);
-		return false;
+		dbg->error("obj_reader_t::read_file()", "reading '%s' failed!", name);
 	}
-
-	fclose(fp);
-	return true;
 }
 
 
-static bool read_node_info(obj_node_info_t& node, FILE* const f, uint32 const version)
+static void read_node_info(obj_node_info_t& node, FILE* const f, uint32 const version)
 {
 	char data[EXT_OBJ_NODE_INFO_SIZE];
-	if (fread(data, OBJ_NODE_INFO_SIZE, 1, f) != 1) {
-		return false;
-	}
 
-	char *p = data;
+	char* p = data;
+	fread(p, OBJ_NODE_INFO_SIZE, 1, f);
 	node.type     = decode_uint32(p);
 	node.children = decode_uint16(p);
 	node.size     = decode_uint16(p);
-
 	// can have larger records
 	if (version != COMPILER_VERSION_CODE_11 && node.size == LARGE_RECORD_SIZE) {
-		if (fread(p, sizeof(data) - OBJ_NODE_INFO_SIZE, 1, f) != 1) {
-			return false;
-		}
+		fread(p, sizeof(data) - OBJ_NODE_INFO_SIZE, 1, f);
 		node.size = decode_uint32(p);
 	}
-
-	return true;
 }
 
 
-bool obj_reader_t::read_nodes(FILE *fp, obj_desc_t *&data, int register_nodes, uint32 version)
+void obj_reader_t::read_nodes(FILE* fp, obj_desc_t*& data, int register_nodes, uint32 version )
 {
 	obj_node_info_t node;
-	if (!read_node_info(node, fp, version)) {
-		return false;
-	}
+	read_node_info(node, fp, version);
 
 	obj_reader_t *reader = obj_reader->get(static_cast<obj_type>(node.type));
-
 	if(reader) {
+
 //DBG_DEBUG("obj_reader_t::read_nodes()","Reading %.4s-node of length %d with '%s'", reinterpret_cast<const char *>(&node.type), node.size, reader->get_type_name());
 		data = reader->read_node(fp, node);
-		if (!data) {
-			return false;
-		}
-
 		if (node.children != 0) {
-			data->children = new obj_desc_t *[node.children];
-
+			data->children = new obj_desc_t*[node.children];
 			for (int i = 0; i < node.children; i++) {
-				if (!read_nodes(fp, data->children[i], register_nodes + 1, version)) {
-					// Note: cannot delete siblings of data->children[i], since equal images point to the same desc
-					delete data; // data->children is delete[]'d by the destructor
-					data = NULL;
-					return false;
-				}
+				read_nodes(fp, data->children[i], register_nodes + 1, version);
 			}
 		}
 
@@ -290,41 +252,24 @@ bool obj_reader_t::read_nodes(FILE *fp, obj_desc_t *&data, int register_nodes, u
 	else {
 		// no reader found ...
 		dbg->warning("obj_reader_t::read_nodes()","skipping unknown %.4s-node\n",reinterpret_cast<const char *>(&node.type));
-		if (fseek(fp, node.size, SEEK_CUR) != 0) {
-			return false;
-		}
-
+		fseek(fp, node.size, SEEK_CUR);
 		for(int i = 0; i < node.children; i++) {
-			if (!skip_nodes(fp,version)) {
-				return false;
-			}
+			skip_nodes(fp,version);
 		}
-
 		data = NULL;
 	}
-
-	return true;
 }
 
 
-bool obj_reader_t::skip_nodes(FILE *fp,uint32 version)
+void obj_reader_t::skip_nodes(FILE *fp,uint32 version)
 {
 	obj_node_info_t node;
-	if (!read_node_info(node, fp, version)) {
-		return false;
-	}
+	read_node_info(node, fp, version);
 
-	if (fseek(fp, node.size, SEEK_CUR) != 0) {
-		return false;
-	}
-
+	fseek(fp, node.size, SEEK_CUR);
 	for(int i = 0; i < node.children; i++) {
-		if (!skip_nodes(fp,version)) {
-			return false;
-		}
+		skip_nodes(fp,version);
 	}
-
-	return true;
 }
 
 
