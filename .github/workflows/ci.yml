@@ -68,9 +68,10 @@ jobs:
           cd simutrans
           cp ../build/simutrans/simutrans-extended simutrans-extended
           wget http://bridgewater-brunel.me.uk/downloads/nightly/pakset/pak128.britain-ex-nightly.tar.gz -q
-          tar -zxf pak128.britain-ex-nightly.tar.gz
+          mkdir Pak128.Britain-Ex
+          tar -zxf pak128.britain-ex-nightly.tar.gz -C Pak128.Britain-Ex
           ls
-          ./simutrans-extended -server -objects pak128.britain-ex-nightly -load demo -lang en &
+          ./simutrans-extended -server -objects Pak128.Britain-Ex -load demo -lang en &
           sleep 10
           kill %1
           
