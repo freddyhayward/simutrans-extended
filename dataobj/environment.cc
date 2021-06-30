@@ -586,13 +586,20 @@ void env_t::rdwr(loadsave_t *file)
 		file->rdwr_long(sound_distance_scaling);
 	}
 
-	if( file->is_version_atleast( 122, 1 )  ||  file->is_version_ex_atleast(14, 41) ) {
+	if( file->is_version_ex_atleast(14, 41) ) {
+		file->rdwr_byte(gui_titlebar_player_color_background_brightness);
+		sint16 dummy_menupos=0;
+		file->rdwr_short(dummy_menupos);
+		bool reselect_closes_tool=false; // dummy
+		file->rdwr_bool( reselect_closes_tool );
+	}
+
+	if( file->is_version_atleast( 122, 1 )  ||  file->is_version_ex_atleast(14, 42) ) {
 		plainstring str = soundfont_filename.c_str();
 		file->rdwr_str( str );
 		if(  file->is_loading()  ) {
 			soundfont_filename = str ? str.c_str() : "";
 		}
-		file->rdwr_byte(gui_titlebar_player_color_background_brightness);
 	}
 
 	// server settings are not saved, since they are server specific

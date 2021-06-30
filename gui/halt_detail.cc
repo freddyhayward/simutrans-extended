@@ -633,6 +633,10 @@ void halt_detail_t::rdwr(loadsave_t *file)
 	}
 	halt_pos.rdwr( file );
 	size.rdwr( file );
+	if( file->is_version_ex_atleast(14,41) ) {
+		uint8 dummy=0;
+		file->rdwr_byte(dummy);
+	}
 	if(  file->is_loading()  ) {
 		halt = welt->lookup( halt_pos )->get_halt();
 		// now we can open the window ...

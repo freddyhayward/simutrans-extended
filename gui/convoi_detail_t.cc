@@ -753,6 +753,10 @@ void convoi_detail_t::rdwr(loadsave_t *file)
 	size.rdwr( file );
 	file->rdwr_long( xoff );
 	file->rdwr_long( yoff );
+	if( file->is_version_ex_atleast(14,41) ) {
+		uint8 dummy=0;
+		file->rdwr_byte(dummy);
+	}
 
 	if(  file->is_loading()  ) {
 		// convoy vanished

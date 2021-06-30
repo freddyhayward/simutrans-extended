@@ -450,10 +450,17 @@ void depotlist_frame_t::draw(scr_coord pos, scr_size size)
 
 void depotlist_frame_t::rdwr(loadsave_t *file)
 {
+	scr_size size = get_windowsize();
+
 	file->rdwr_byte(depot_type_filter_bits);
 	file->rdwr_bool(sort_asc.pressed);
 	uint8 s = depotlist_stats_t::sort_mode;
 	file->rdwr_byte(s);
+	if( file->is_version_ex_atleast(14,41) ) {
+		uint8 dummy=0;
+		file->rdwr_byte(dummy);
+		size.rdwr(file);
+	}
 
 	if (file->is_loading()) {
 		sortedby.set_selection(s);
